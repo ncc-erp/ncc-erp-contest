@@ -1,5 +1,5 @@
 # This is the same ID you specified in the judge admin panel
-id: tier3
+id: ncc-tier2
 # The key this judge will use to authenticate with the site server, generated from the admin panel
 key: "4fg/NMnIHi5NWGILMnAi7Qt7iSVTnDednfBx2A5GRbDEyTiH/+vHFKqg+taNLNb53VYbsj+Cno0cG8xi/7LqL3VKUhqyiOPpXDyN"
 # Where to look for problems on the local filesystem.

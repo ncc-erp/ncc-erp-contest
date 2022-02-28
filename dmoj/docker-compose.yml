@@ -1,0 +1,118 @@
+version: '3.7'
+services:
+  db:
+    container_name: dmoj_mysql
+    image: mariadb
+    restart: always
+    volumes:
+      - ./database/:/var/lib/mysql/
+    env_file: [environment/mysql.env, environment/mysql-admin.env]
+    networks: [db]
+  redis:
+    container_name: dmoj_redis
+    image: redis:alpine
+    restart: always
+    networks: [site]
+  texoid:
+    build:
+      context: .
+      dockerfile: ./texoid/Dockerfile
+    image: ninjaclasher/dmoj-texoid
+    restart: unless-stopped
+    networks: [site]
+  mathoid:
+    build:
+      context: .
+      dockerfile: ./mathoid/Dockerfile
+    image: ninjaclasher/dmoj-mathoid
+    restart: unless-stopped
+    volumes:
+      - ./mathoid/config.yaml:/node_modules/mathoid/config.yaml
+    networks: [site]
+  base:
+    build:
+      context: .
+      dockerfile: ./base/Dockerfile
+    image: ninjaclasher/dmoj-base
+    network_mode: none
+  site:
+    build:
+      context: .
+      dockerfile: ./site/Dockerfile
+    image: ninjaclasher/dmoj-site
+    restart: unless-stopped
+    volumes:
+      - assets:/assets/
+      - pdfcache:/pdfcache/
+      - datacache:/datacache/
+      - cache:/cache/
+      - ./media/:/media/
+      - ./problems/:/problems/
+      - ./repo/:/site/
+    working_dir: /site/
+    env_file: [environment/mysql.env, environment/site.env]
+    networks: [site, nginx, db]
+    depends_on: [base, db, redis]
+  celery:
+    build:
+      context: .
+      dockerfile: ./celery/Dockerfile
+    image: ninjaclasher/dmoj-celery
+    restart: unless-stopped
+    volumes:
+      - datacache:/datacache/
+      - ./repo/:/site/
+    working_dir: /site/
+    env_file: [environment/mysql.env, environment/site.env]
+    networks: [site, db]
+    depends_on: [base, db, redis]
+  bridged:
+    build:
+      context: .
+      dockerfile: ./bridged/Dockerfile
+    image: ninjaclasher/dmoj-bridged
+    restart: unless-stopped
+    volumes:
+      - ./problems/:/problems/
+      - ./repo/:/site/
+    working_dir: /site/
+    env_file: [environment/mysql.env, environment/site.env]
+    networks: [site, nginx, db]
+    ports:
+      - 9999:9999
+    depends_on: [base, db, redis]
+  wsevent:
+    build:
+      context: .
+      dockerfile: ./wsevent/Dockerfile
+    image: ninjaclasher/dmoj-wsevent
+    restart: unless-stopped
+    volumes:
+      - ./repo/:/app/site/
+    working_dir: /app/site
+    env_file: [environment/mysql.env, environment/site.env]
+    networks: [site, nginx]
+  nginx:
+    container_name: dmoj_nginx
+    image: nginx:alpine
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - assets:/assets/
+      - pdfcache:/pdfcache/
+      - datacache:/datacache/
+      - cache:/cache/
+      - ./media/:/media/
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks: [nginx]
+    depends_on: [site, wsevent]
+networks:
+  site:
+  db:
+  nginx:
+volumes:
+  assets:
+  pdfcache:
+  datacache:
+  cache:

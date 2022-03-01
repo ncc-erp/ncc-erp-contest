@@ -1,5 +1,7 @@
 GIT_TAG ?= master
 TAG ?= latest
+EXCLUDE ?= 
+
 
 .PHONY: all judge-tier1 judge-tier2 judge-tier3
 

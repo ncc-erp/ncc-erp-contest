@@ -5,7 +5,8 @@ key: "4fg/NMnIHi5NWGILMnAi7Qt7iSVTnDednfBx2A5GRbDEyTiH/+vHFKqg+taNLNb53VYbsj+Cno
 # Where to look for problems on the local filesystem.
 # This directory /not/ scanned recursively, and any directory containing an init.yml file is assumed to
 # be a problem directory.
-problem_storage_root: "/problems"
+problem_storage_root: 
+  - /problems
   
 # All configuration for language executors
 # If you're unsure of what values a language needs, your best bet is to consult the source of the executor:

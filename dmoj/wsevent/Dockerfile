@@ -1,4 +1,4 @@
-FROM node:114
+FROM node:10.21.0
 
 WORKDIR /app/
 RUN npm install qu ws simplesets

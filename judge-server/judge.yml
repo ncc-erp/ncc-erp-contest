@@ -1,0 +1,40 @@
+# This is the same ID you specified in the judge admin panel.
+id: runtime_1
+# The key this judge will use to authenticate with the site server, generated from the admin panel.
+key: "6MqG2yzUqfLnLeKBY3i9zywmhJAeowynlMa4XFpKsKThGO3Rmm0L7QVjOjvVnfYz1YDD1Fmjj8HYHxVaXdbDYaRHFVjOjctCVXTn"
+# Where to look for problems on the local filesystem.
+# This directory is /not/ scanned recursively, and any directory containing an init.yml file is assumed to
+# be a problem directory.
+problem_storage_root:
+  - /home/nccsoft/projects/contest/judge-server/testsuite
+  - /home/nccsoft/projects/contest/site/
+# All configuration for language executors.
+# If you're unsure of what values a language needs, your best bet is to consult the source of the executor:
+# <https://github.com/DMOJ/judge-server/tree/master/dmoj/executors>
+runtime:
+  as_x64: /usr/bin/x86_64-linux-gnu-as
+  as_x86: /usr/bin/as
+  awk: /usr/bin/mawk
+  cat: /usr/bin/cat
+  g++: /usr/bin/g++
+  g++11: /usr/bin/g++
+  g++14: /usr/bin/g++
+  g++17: /usr/bin/g++
+  fsharpc: /usr/bin/fsharpc
+  gcc: /usr/bin/gcc
+  gcc11: /usr/bin/gcc
+  java8: /usr/lib/jvm/java-8-openjdk-amd64/bin/java
+  java8_mode: server
+  javac8: /usr/lib/jvm/java-8-openjdk-amd64/bin/javac
+  ld_x64: /usr/bin/x86_64-linux-gnu-ld
+  ld_x86: /usr/bin/ld
+  perl: /usr/bin/perl
+  sed: /usr/bin/sed
+  node: /home/nccsoft/.nvm/versions/node/v16.15.1/bin/node
+  python: /usr/bin/python2.7
+  python3: /usr/bin/python3.8
+  csharp: /usr/bin/dotnet
+  v8dmoj: /usr/bin/v8dmoj
+  mono: /usr/bin/mono
+  mono-csc: /usr/bin/mono-csc
+

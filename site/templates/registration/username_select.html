@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block body %}
+    <form action="" method="post" class="form-area">
+        {% csrf_token %}
+        <table border="0" style="text-align:left">
+            <tbody>
+                <tr>
+                    <th>
+                        <label for="id_username">Username:</label>
+                    </th>
+                    <td>
+                        <input type="text" name="username" id="id_username" value="{{ username }}" maxlength="30" required readonly>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <input type="submit" style="float:right;" value="{{ _('Continue >') }}">
+    </form>
+{% endblock %}

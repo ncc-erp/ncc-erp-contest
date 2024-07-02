@@ -613,7 +613,6 @@ user_logger = logging.getLogger('judge.user')
 class ProblemSubmit(LoginRequiredMixin, ProblemMixin, TitleMixin, SingleObjectFormView):
     template_name = 'problem/submit.html'
     form_class = ProblemSubmitForm
-
     @cached_property
     def contest_problem(self):
         if self.request.profile.current_contest is None:
@@ -740,6 +739,8 @@ class ProblemSubmit(LoginRequiredMixin, ProblemMixin, TitleMixin, SingleObjectFo
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['langs'] = Language.objects.all()
+        context['problem'] = self.object
+        context["problem_types"] = self.object.types
         context['no_judges'] = not context['form'].fields['language'].queryset
         context['submission_limit'] = self.contest_problem and self.contest_problem.max_submissions
         context['submissions_left'] = self.remaining_submission_count

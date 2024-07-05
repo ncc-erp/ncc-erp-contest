@@ -189,6 +189,9 @@ class Problem(models.Model):
     @cached_property
     def types_list(self):
         return list(map(user_gettext, map(attrgetter('full_name'), self.types.all())))
+    @cached_property
+    def is_manual_test(self):
+        return self.types.filter(name='manual_test').exists()
 
     def languages_list(self):
         return self.allowed_languages.values_list('common_name', flat=True).distinct().order_by('common_name')
@@ -208,6 +211,17 @@ class Problem(models.Model):
         if self.is_organization_private and self.organizations.filter(admins=user.profile).exists():
             return True
         return False
+    def is_reviewable_by(self, user):
+        if not user.is_authenticated:
+            return False
+        if not user.has_perm('judge.edit_own_problem'):
+            return False
+        if user.profile.id in self.editor_ids:
+            return True
+        if user.profile.id in self.author_ids:
+            return True
+        return False
+        
 
     def is_accessible_by(self, user, skip_contest_problem_check=False):
         # If we don't want to check if the user is in a contest containing that problem.

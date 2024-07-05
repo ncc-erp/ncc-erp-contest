@@ -10,9 +10,7 @@
                     if (!state.id) return state.text; // optgroup
                     return state.text;
                 }
-
                 window.previous_template = '';
-
                 function update_language_template() {
                     var source = $('textarea#id_source');
                     if (source.val() == window.previous_template.replace(/\r/g, '') || source.val() == '') {
@@ -160,7 +158,7 @@
     {% endif %}
   {% endif %}
 
-  <form id="problem_submit" action="" method="post" class="form-area">
+  <form id="problem_submit" action="manual_test" method="post" class="form-area">
     {% csrf_token %}
     {{ form.non_field_errors() }}
     <div id="submit-wrapper">
@@ -180,20 +178,12 @@
       {% endif %}
     </div>
     <hr />
-    {% if not problem_types.filter(name='manual_test').exists() %}
-      {% if no_judges %}
-        <span style="color: red">{{ _('No judge is available for this problem.') }}</span>
-      {% else %}
-        <div class="submit-bar">
-          {{ form.judge }}
-          <input type="text" name="problem_type" value="{{ problem_types.all().0.name }}" />
-          <input type="submit" value="{{ _('Submit!') }}" class="button" />
-        </div>
-      {% endif %}
+    {% if no_judges %}
+      <span style="color: red">{{ _('No judge is available for this problem.') }}</span>
     {% else %}
       <div class="submit-bar">
         {{ form.judge }}
-        <input type="text" name="problem_type" value="{{ problem_types.all().0.name }}" />
+        <input type="hidden" name="problem_type" value="{{ problem_types.all().0.name }}" />
         <input type="submit" value="{{ _('Submit!') }}" class="button" />
       </div>
     {% endif %}

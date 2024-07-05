@@ -27,7 +27,7 @@ from django.views.generic.detail import SingleObjectMixin
 from reversion import revisions
 
 from judge.comments import CommentedDetailView
-from judge.forms import ProblemCloneForm, ProblemPointsVoteForm, ProblemSubmitForm
+from judge.forms import ProblemCloneForm, ProblemPointsVoteForm, ProblemSubmitForm, ProblemManualSubmitForm
 from judge.models import ContestSubmission, Judge, Language, Problem, ProblemGroup, ProblemPointsVote, \
     ProblemTranslation, ProblemType, RuntimeVersion, Solution, Submission, SubmissionSource
 from judge.utils.diggpaginator import DiggPaginator
@@ -169,6 +169,7 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
         context['has_pdf_render'] = PDF_RENDERING_ENABLED
         context['completed_problem_ids'] = self.get_completed_problems()
         context['attempted_problems'] = self.get_attempted_problems()
+        context['MANUAL'] = self.object.is_manual_test
 
         can_edit = self.object.is_editable_by(user)
         context['can_edit_problem'] = can_edit
@@ -613,6 +614,21 @@ user_logger = logging.getLogger('judge.user')
 class ProblemSubmit(LoginRequiredMixin, ProblemMixin, TitleMixin, SingleObjectFormView):
     template_name = 'problem/submit.html'
     form_class = ProblemSubmitForm
+    def set_problem_type(self, type):
+        problem_type = type
+        # problem = self.get_object()
+        # if not problem.types.filter(name=problem_type).exists():
+        #     first_type = problem.types.first()
+        #     return HttpResponseRedirect(reverse('problem_submit', args=[problem.code]) + '?type=' + first_type.name)  
+        match problem_type:
+            case 'manual_test':
+                self.template_name = 'problem/submit-manual.html'
+                self.form_class = ProblemManualSubmitForm
+            case _:
+                self.template_name = 'problem/submit.html'
+                self.form_class = ProblemSubmitForm
+        return self.template_name, self.form_class
+            
     @cached_property
     def contest_problem(self):
         if self.request.profile.current_contest is None:
@@ -674,12 +690,12 @@ class ProblemSubmit(LoginRequiredMixin, ProblemMixin, TitleMixin, SingleObjectFo
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-
-        form.fields['language'].queryset = (
-            self.object.usable_languages.order_by('name', 'key')
-            .prefetch_related(Prefetch('runtimeversion_set', RuntimeVersion.objects.order_by('priority')))
-        )
-
+        problem_type = self.request.GET.get('type') or 'normal'
+        if (problem_type != 'manual_test'):
+            form.fields['language'].queryset = (
+                self.object.usable_languages.order_by('name', 'key')
+                .prefetch_related(Prefetch('runtimeversion_set', RuntimeVersion.objects.order_by('priority')))
+            )
         form_data = getattr(form, 'cleaned_data', form.initial)
         if 'language' in form_data:
             form.fields['source'].widget.mode = form_data['language'].ace
@@ -691,13 +707,15 @@ class ProblemSubmit(LoginRequiredMixin, ProblemMixin, TitleMixin, SingleObjectFo
         return reverse('submission_status', args=(self.new_submission.id,))
 
     def form_valid(self, form):
+        problem_type = self.request.GET.get('type') or 'normal'
         if (
             not self.request.user.has_perm('judge.spam_submission') and
             Submission.objects.filter(user=self.request.profile, rejudged_date__isnull=True)
                               .exclude(status__in=['D', 'IE', 'CE', 'AB']).count() >= settings.DMOJ_SUBMISSION_LIMIT
         ):
             return HttpResponse(format_html('<h1>{0}</h1>', _('You submitted too many submissions.')), status=429)
-        if not self.object.allowed_languages.filter(id=form.cleaned_data['language'].id).exists():
+        
+        if problem_type != 'manual_test' and not self.object.allowed_languages.filter(id=form.cleaned_data['language'].id).exists():
             raise PermissionDenied()
         if not self.request.user.is_superuser and self.object.banned_users.filter(id=self.request.profile.id).exists():
             return generic_message(self.request, _('Banned from submitting'),
@@ -732,8 +750,8 @@ class ProblemSubmit(LoginRequiredMixin, ProblemMixin, TitleMixin, SingleObjectFo
 
         # Save a query.
         self.new_submission.source = source
-        self.new_submission.judge(force_judge=True, judge_id=form.cleaned_data['judge'])
-
+        if problem_type != 'manual_test':
+            self.new_submission.judge(force_judge=True, judge_id=form.cleaned_data['judge'])
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
@@ -747,9 +765,28 @@ class ProblemSubmit(LoginRequiredMixin, ProblemMixin, TitleMixin, SingleObjectFo
         context['ACE_URL'] = settings.ACE_URL
         context['default_lang'] = self.default_language
         return context
-
+    
+    def get(self, request, *args, **kwargs):
+        try:
+            problem_type = request.GET.get('type') or 'normal'
+            problem_type = request.GET.get('type') or 'normal'
+            problem = self.get_object()
+            if not problem.types.filter(name=problem_type).exists():
+                first_type = problem.types.first()
+                return HttpResponseRedirect(reverse('problem_submit', args=[problem.code]) + '?type=' + first_type.name)
+            self.set_problem_type(problem_type)
+            return super().get(request, *args, **kwargs)
+        except Http404:
+            return self.no_such_problem()
+        
     def post(self, request, *args, **kwargs):
         try:
+            problem_type = request.GET.get('type') or 'normal'
+            problem = self.get_object()
+            if not problem.types.filter(name=problem_type).exists():
+                first_type = problem.types.first()
+                return HttpResponseRedirect(reverse('problem_submit', args=[problem.code]) + '?type=' + first_type.name)
+            self.set_problem_type(problem_type)
             return super().post(request, *args, **kwargs)
         except Http404:
             # Is this really necessary? This entire post() method could be removed if we don't log this.

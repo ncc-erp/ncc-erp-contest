@@ -102,9 +102,15 @@
 {% block info_float %}
     {% if request.user.is_authenticated and request.in_contest and submission_limit %}
         {% if submissions_left > 0 %}
-            <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full">
-                {{ _('Submit solution') }}
-            </a>
+            {% if not problem.is_manual_test %}
+                <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full">
+                    {{ _('Submit solution') }}
+                </a>
+            {% else %}
+                <a href="{{ url('problem_submit', problem.code) }}?type=manual_test" class="unselectable button full">
+                    {{ _('Submit Manual') }}
+                </a>
+            {% endif %}
             <div class="submissions-left">
                 {% trans trimmed counter=submissions_left %}
                     {{ counter }} submission left
@@ -117,9 +123,15 @@
             <div class="no-submissions-left submissions-left">{{ _('0 submissions left') }}</div>
         {% endif %}
     {% else %}
-        <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full">
-            {{ _('Submit solution') }}
-        </a>
+        {% if not problem.is_manual_test %}
+            <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full">
+                {{ _('Submit solution') }}
+            </a>
+         {% else %}
+            <a href="{{ url('problem_submit', problem.code) }}?type=manual_test" class="unselectable button full">
+                {{ _('Submit Manual') }}
+            </a>
+    {% endif %}
     {% endif %}
 
     <hr style="padding-bottom: 0.3em">
@@ -253,7 +265,7 @@
             {% endwith %}
         </div>
     {% endif %}
-    {% if show_languages %}
+    {% if show_languages and not problem.is_manual_test %}
         <div id="allowed-langs">
             <div class="toggle open unselectable">
                 <i class="fa fa-chevron-right fa-fw"></i>{{ _('Allowed languages') }}
@@ -272,7 +284,7 @@
             </div>
         </div>
     {% endif %}
-    {% if problem.is_editable_by(request.user) %}
+    {% if problem.is_editable_by(request.user) and not problem.is_manual_test %}
         <div id="available-judges">
             <i class="fa fa-database fa-fw"></i><span
                 class="pi-name">{% trans trimmed count=available_judges|length %}
@@ -351,3 +363,4 @@
     {{ super() }}
     {% include "comments/math.html" %}
 {% endblock %}
+

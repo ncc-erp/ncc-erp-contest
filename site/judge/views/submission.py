@@ -49,7 +49,23 @@ class SubmissionMixin(object):
     context_object_name = 'submission'
     pk_url_kwarg = 'submission'
 
-
+@require_POST
+def reviewPoint(request):
+    submission_id = request.POST.get('submission_id')
+    submission = get_object_or_404(Submission, id=int(submission_id))
+    if not submission.problem.is_reviewable_by(request.user):
+        raise PermissionDenied()
+    point_str = request.POST.get('point')
+    if not point_str.isdigit():
+        return HttpResponseRedirect(reverse('submission_status', args=(submission.id,)))
+    point = int(point_str)
+    if not point or point < 0 or point > submission.problem.points:
+        return HttpResponseRedirect(reverse('submission_status', args=(submission.id,)))
+    submission.case_points = point
+    submission.result = 'AC'
+    submission.save(update_fields=['case_points'])
+    submission.save(update_fields=['result'])
+    return HttpResponseRedirect(reverse('submission_status', args=(submission.id,)))
 class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, DetailView):
     def get_object(self, queryset=None):
         submission = super(SubmissionDetailBase, self).get_object(queryset)
@@ -175,7 +191,8 @@ class SubmissionStatus(SubmissionDetailBase):
         context = super(SubmissionStatus, self).get_context_data(**kwargs)
         submission = self.object
         context['last_msg'] = event.last()
-
+        context['raw_source'] = submission.source.source.rstrip('\n')
+        context['highlighted_source'] = highlight_code(submission.source.source, submission.language.pygments)
         context['batches'], statuses, context['max_execution_time'] = group_test_cases(submission.test_cases.all())
         context['statuses'] = combine_statuses(statuses, submission)
 

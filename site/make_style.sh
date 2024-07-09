@@ -9,11 +9,6 @@ if ! [ -x "$(command -v postcss)" ]; then
   exit 1
 fi
 
-if ! [ -x "$(command -v autoprefixer)" ]; then
-  echo 'Error: autoprefixer is not installed.' >&2
-  exit 1
-fi
-
 cd "$(dirname "$0")" || exit
 
 build_style() {

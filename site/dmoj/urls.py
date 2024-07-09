@@ -139,7 +139,6 @@ urlpatterns = [
                  name='problem_submissions_rescore_success'),
         ])),
     ])),
-
     path('submissions/', paged_list_view(submission.AllSubmissions, 'all_submissions')),
     path('submissions/user/<str:user>/', paged_list_view(submission.AllUserSubmissions, 'all_user_submissions')),
 
@@ -150,6 +149,7 @@ urlpatterns = [
         path('', submission.SubmissionStatus.as_view(), name='submission_status'),
         path('/abort', submission.abort_submission, name='submission_abort'),
     ])),
+    path('submission/review-points', submission.reviewPoint, name='review_point'),
 
     path('users/', include([
         path('', user.users, name='user_list'),

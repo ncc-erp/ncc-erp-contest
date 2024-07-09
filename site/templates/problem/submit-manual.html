@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block js_media %}
+  <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
+  {{ form.media.js }}
+  {% compress js %}
+  <script type="text/javascript">
+    $(function () {
+      function format(state) {
+        if (!state.id) return state.text // optgroup
+        return state.text
+      }
+      window.previous_template = ''
+      $('#ace_source').on('ace_load', function (e, editor) {
+        update_language_template()
+        editor.commands.addCommand({
+          name: 'save',
+          bindKey: { win: 'Ctrl-S', mac: 'Command-S' },
+          exec: function () {
+            localStorage.setItem('submit:' + $('#id_language').val(), editor.getSession().getValue())
+          }
+        })
+        editor.getSession().setUseWrapMode(true)
+        editor.setFontSize(14)
+        editor.setPrintMarginColumn(100)
+        editor.focus()
+      })
+    
+      $(window)
+        .resize(function () {
+          $('#ace_source').height(Math.max($(window).height() - 353, 100))
+        })
+        .resize()
+    
+      $('#problem_submit').submit(function (event) {
+        if ($('#id_source').val().length > 65536) {
+          alert("{{ _('Your source code must contain at most 65536 characters.') }}")
+          event.preventDefault()
+          $('#problem_submit').find(':submit').attr('disabled', false)
+        }
+      })
+    })
+  </script>
+  {% endcompress %}
+{% endblock %}
+
+{% block media %}
+  {{ form.media.css }}
+{% endblock %}
+
+{% block body %}
+  <div class="submission-header">
+    <button class="accordion">{{ problem.name }}</button>
+    <div class="panel">
+      <div class="problem-statement">{{ problem.description|markdown(problem.markdown_style, MATH_ENGINE)|reference|str|safe }}</div>
+    </div>
+  </div>
+  {% if request.in_contest and submission_limit %}
+    {% if submissions_left > 0 %}
+      <div class="alert alert-warning alert-dismissable">
+        <a class="close">x</a>
+        {% trans left=submissions_left -%}You have {{ left }} submission left{%- pluralize -%}You have {{ left }} submissions left{%- endtrans %}
+      </div>
+    {% else %}
+      <div class="alert alert-warning alert-dismissable">
+        <a class="close">x</a>
+        {{ _('You have 0 submissions left') }}
+      </div>
+    {% endif %}
+  {% endif %}
+
+  <form id="problem_submit" action="" method="post" class="form-area">
+    {% csrf_token %}
+    <div id="submit-wrapper">
+      <div id="editor">{{ form.source.errors }}
+        {{ form.source }}</div>
+    </div>
+    <div class="submit-bar">
+      <input type="hidden" name="language" value="10" />
+      <input type="submit" value="{{ _('Submit!') }}" class="button" />
+    </div>
+  </form>
+  <script>
+    var acc = document.getElementsByClassName('accordion')
+    for (var i = 0; i < acc.length; i++) {
+      acc[i].addEventListener('click', function () {
+        /* Toggle between adding and removing the "active" class,
+                                                                                                            to highlight the button that controls the panel */
+        this.classList.toggle('active')
+        /* Toggle between hiding and showing the active panel */
+        var panel = this.nextElementSibling
+        if (panel.style.display === 'block') {
+          panel.style.display = 'none'
+        } else {
+          panel.style.display = 'block'
+        }
+      })
+    }
+  </script>
+{% endblock %}

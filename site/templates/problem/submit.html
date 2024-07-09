@@ -1,18 +1,16 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block js_media %}
-    <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
-    {{ form.media.js }}
-    {% compress js %}
-        <script type="text/javascript">
+  <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
+  {{ form.media.js }}
+  {% compress js %}
+  <script type="text/javascript">
             $(function () {
                 function format(state) {
                     if (!state.id) return state.text; // optgroup
                     return state.text;
                 }
-
                 window.previous_template = '';
-
                 function update_language_template() {
                     var source = $('textarea#id_source');
                     if (source.val() == window.previous_template.replace(/\r/g, '') || source.val() == '') {
@@ -78,7 +76,7 @@
                 $('#id_language').on('select2:open', function (evt) {
                     var dropdown = $('.select2-dropdown');
                     if (!$('#result-version-info').length)
-                        dropdown.append($("<span id=\"result-version-info\">"));
+                        dropdown.append('<div id="result-version-info"></div>');
                     dropdown.attr('id', 'language-select2');
                 });
 
@@ -122,78 +120,89 @@
                 });
             });
         </script>
-    {% endcompress %}
+  {% endcompress %}
 {% endblock %}
 
 {% block media %}
-    {{ form.media.css }}
+  {{ form.media.css }}
 {% endblock %}
 
 {% block body %}
-    <br>
-    {% if not no_judges %}
-        {% if default_lang not in form.fields.language.queryset %}
-            <div class="alert alert-warning alert-dismissable">
-                <a class="close">x</a>
-                <b>{{ _('Warning!') }}</b>
-                {{ _('Your default language, %(language)s, is unavailable for this problem and has been deselected.', language=bold(default_lang.name)) }}
-            </div>
-        {% endif %}
-
-        {% if request.in_contest and submission_limit %}
-            {% if submissions_left > 0 %}
-                <div class="alert alert-warning alert-dismissable">
-                    <a class="close">x</a>
-                    {% trans left=submissions_left -%}
-                        You have {{ left }} submission left
-                        {%- pluralize -%}
-                        You have {{ left }} submissions left
-                    {%- endtrans %}
-                </div>
-            {% else %}
-                <div class="alert alert-warning alert-dismissable">
-                    <a class="close">x</a>
-                    {{ _('You have 0 submissions left') }}
-                </div>
-            {% endif %}
-        {% endif %}
+  <div class="submission-header">
+    <button class="accordion">{{ problem.name }}</button>
+    <div class="panel">
+      <div class="problem-statement">{{ problem.description|markdown(problem.markdown_style, MATH_ENGINE)|reference|str|safe }}</div>
+    </div>
+  </div>
+  {% if not no_judges %}
+    {% if default_lang not in form.fields.language.queryset %}
+      <div class="alert alert-warning alert-dismissable">
+        <a class="close">x</a>
+        <b>{{ _('Warning!') }}</b>
+        {{ _('Your default language, %(language)s, is unavailable for this problem and has been deselected.', language=bold(default_lang.name)) }}
+      </div>
     {% endif %}
 
-    <form id="problem_submit" action="" method="post" class="form-area">
-        {% csrf_token %}
-        {{ form.non_field_errors() }}
-        <div id="submit-wrapper">
-            <div id="editor">
-                {{ form.source.errors }}
-                {{ form.source }}
-            </div>
-            {% if not no_judges %}
-                <div id="language">
-                    {{ form.language.errors }}
-                    <div id="language-select">
-                        <select id="id_language" name="language">
-                            {% for lang in form.fields.language.queryset %}
-                                <option value="{{ lang.id }}" data-id="{{ lang.id }}" data-name="{{ lang.name }}"
-                                        data-info="{{ lang.info }}" data-ace="{{ lang.ace }}"
-                                        data-judge-info="{{ runtime_versions(lang.runtime_versions()) }}"
-                                        {% if lang.id == default_lang.id %}selected{% endif %}>{{ lang.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-            {% endif %}
+    {% if request.in_contest and submission_limit %}
+      {% if submissions_left > 0 %}
+        <div class="alert alert-warning alert-dismissable">
+          <a class="close">x</a>
+          {% trans left=submissions_left -%}You have {{ left }} submission left{%- pluralize -%}You have {{ left }} submissions left{%- endtrans %}
         </div>
+      {% else %}
+        <div class="alert alert-warning alert-dismissable">
+          <a class="close">x</a>
+          {{ _('You have 0 submissions left') }}
+        </div>
+      {% endif %}
+    {% endif %}
+  {% endif %}
 
-        <hr>
-
-        {% if no_judges %}
-            <span style="color: red">{{ _('No judge is available for this problem.') }}</span>
-        {% else %}
-            <div class="submit-bar">
-                {{ form.judge }}
-                <input type="submit" value="{{ _('Submit!') }}" class="button"
-                       {% if request.in_contest and submission_limit and not submissions_left %}disabled{% endif %}>
-            </div>
-        {% endif %}
-    </form>
+  <form id="problem_submit" action="manual_test" method="post" class="form-area">
+    {% csrf_token %}
+    {{ form.non_field_errors() }}
+    <div id="submit-wrapper">
+      <div id="editor">{{ form.source.errors }}
+        {{ form.source }}</div>
+      {% if not no_judges %}
+        <div id="language">
+          {{ form.language.errors }}
+          <div id="language-select">
+            <select id="id_language" name="language">
+              {% for lang in form.fields.language.queryset %}
+                <option value="{{ lang.id }}" data-id="{{ lang.id }}" data-name="{{ lang.name }}" data-info="{{ lang.info }}" data-ace="{{ lang.ace }}" data-judge-info="{{ runtime_versions(lang.runtime_versions()) }}" selected>{{ lang.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+    <hr />
+    {% if no_judges %}
+      <span style="color: red">{{ _('No judge is available for this problem.') }}</span>
+    {% else %}
+      <div class="submit-bar">
+        {{ form.judge }}
+        <input type="hidden" name="problem_type" value="{{ problem_types.all().0.name }}" />
+        <input type="submit" value="{{ _('Submit!') }}" class="button" />
+      </div>
+    {% endif %}
+  </form>
+  <script>
+    var acc = document.getElementsByClassName("accordion");
+    for (var i = 0; i < acc.length; i++) {
+      acc[i].addEventListener("click", function () {
+        /* Toggle between adding and removing the "active" class,
+        to highlight the button that controls the panel */
+        this.classList.toggle("active");
+        /* Toggle between hiding and showing the active panel */
+        var panel = this.nextElementSibling;
+        if (panel.style.display === "block") {
+          panel.style.display = "none";
+        } else {
+          panel.style.display = "block";
+        }
+      });
+    }
+  </script>
 {% endblock %}

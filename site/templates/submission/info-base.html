@@ -1,45 +1,53 @@
 {% extends "base.html" %}
 {% block media %}
     <style>
-        .submission-info{
+        .submission-info {
             display: flex;
-            gap: 20px;
-            float: right;
-        }
-        .submission-info form {
-            display: flex;
-            gap: 10px;
-            justify-content: right;
+            justify-content: space-between;
             align-items: center;
+            gap: 16px;
         }
-        .submission-info form #point{
+        .point-label {
+            display: block;
+            margin: auto 8px;
+            font-size: 1rem;
+        }
+        .point-input:disabled {
+            background-color: #f8f9fa;
+            cursor: not-allowed;
+        }
+        .point-container {
+            display: flex;
+        }
+
+        .point-container input {
             width: 60px;
         }
-        .submission-info form .btn-submit {
-            padding: 5px;
-            font-size: 14px;
-        }
     </style>
-{% endblock%}
+{% endblock %}
 {% block header %}
-    <span class="submission-info">
-        {% if problem_type.name == "Manual Test"%}
-            <div class="mark">
-                <form action="{{ url('submission_update_point', submission.id) }}" method="post">
-                    {% csrf_token %}
-                    <span>{{ _('Mark') }}</span>:
-                    <input type="number" step="0.01" id="point" name="point" value="{{ submission.points }}" {% if not is_change_submission %}readonly{% endif %}> / <span class="totalPoint">{{ points }}</span>
-                    <input type="submit" value={{ _('Save')}} class='btn-submit'>
-                </form> 
-                {% if messages %}
-                    {% for message in messages %}
-                        <span {% if message.tags %} class="{{ message.tags }}" style="color: red" {% endif %}>{{ message }}</span>
-                    {% endfor %}
+{% with date=submission.date|date(_('N j, Y, g:i a')), can_edit=submission.problem.is_editable_by(request.user), can_review=submission.problem.is_reviewable_by(request.user) %}
+        <div class="submission-info">
+            {% if submission.problem.is_manual_test %}
+                {% if can_review %}    
+                    <form method="POST" action="{{url('review_point')}}" class="point-container">
+                        {% csrf_token %}
+                        <span class="point-label">{{_('Point: ')}}</span>
+                        <input type="hidden" name="submission_id" value="{{submission.id}}">
+                        <input id="point" type="number" name="point" value="{{submission.case_points|floatformat or '0'}}">
+                        <span class="point-label">/{{submission.problem.points|floatformat}}</span>
+                        <button type="submit">{{_('Save')}}</button>
+                    </form>
+                {% else %}
+                    <div class="point-container">
+                        {% csrf_token %}
+                        <span class="point-label">{{_('Point: ')}}</span>
+                        <input class="point-input" disabled type="text" name="point" value="{{submission.case_points|floatformat or ''}}">
+                        <span class="point-label">/{{submission.problem.points|floatformat}}</span>
+                    </div>
                 {% endif %}
-            </div>
-        {% endif %}
-        <span class="submission-date">
-            {% with date=submission.date|date(_('N j, Y, g:i a')), can_edit=submission.problem.is_editable_by(request.user) %}
+            {% endif %}
+            <span class="submission-date">
                 {% if can_edit and submission.judged_on %}
                     {{ _('%(date)s on %(judge)s', date=date, judge=submission.judged_on.name) }}
                 {% else %}
@@ -50,7 +58,7 @@
                 {% if can_edit %}
                     [<a href="{{ url('admin:judge_submission_change', submission.id) }}">{{ _('Admin') }}</a>]
                 {% endif %}
-            {% endwith %}
-        </span>
-    </span>
+            </span>
+        </div>
+{% endwith %}
 {% endblock %}

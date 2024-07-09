@@ -1,20 +1,73 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block header %}
+<style>
+  .submission-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 
-{% block header %}
-    <span class="submission-info">
-        <span class="submission-date">
-            {% with date=submission.date|date(_('N j, Y, g:i a')), can_edit=submission.problem.is_editable_by(request.user) %}
-                {% if can_edit and submission.judged_on %}
-                    {{ _('%(date)s on %(judge)s', date=date, judge=submission.judged_on.name) }}
-                {% else %}
-                    {{ date }}
-                {% endif %}
-                <br>
-                <span>{{ submission.language }}</span>
-                {% if can_edit %}
-                    [<a href="{{ url('admin:judge_submission_change', submission.id) }}">{{ _('Admin') }}</a>]
-                {% endif %}
-            {% endwith %}
-        </span>
-    </span>
+  .tags {
+    display: flex;
+    align-items: center;
+    color: black;
+    font-size: 16px;
+    font-weight: bold;
+    padding-right: 20px;
+  }
+
+  .tag {
+    margin-right: 10px;
+  }
+
+  form {
+    margin-right: 10px;
+  }
+
+  .inputPoints {
+    width: 70px;
+    padding: 5px;
+    box-sizing: border-box;
+  }
+
+  .points {
+    margin-left: 5px;
+  }
+
+  .submission-date {
+    margin-left: 20px;
+  }
+</style>
+
+<span class="submission-info">
+ 
+    {% if no_judges  %}
+    <span class="tag">Chấm điểm :</span>
+    <form action="case_points" method="post" >
+      <input
+        class="inputPoints"
+        type="number"
+        name="points"
+        placeholder="Point"
+        value="{{submission.points|floatformat(-1) }}"
+      />
+    </form>
+    {% else%}
+    <span class="tag">Tổng điểm: </span>
+    {{submission.points|floatformat(-1) }} 
+    {% endif %} /
+    {{submission.problem.points|floatformat(-1) }}
+  </span>
+  <span class="submission-date">
+    {% with date=submission.date|date(_('N j, Y, g:i a')),
+    can_edit=submission.problem.is_editable_by(request.user) %} {% if can_edit
+    and submission.judged_on %} {{ _('%(date)s on %(judge)s', date=date,
+    judge=submission.judged_on.name) }} {% else %} {{ date }} {% endif %}
+    <br />
+    <span>{{ submission.language }}</span>
+    {% if can_edit %} [<a
+      href="{{ url('admin:judge_submission_change', submission.id) }}"
+      >{{ _('Admin') }}</a
+    >] {% endif %} {% endwith %}
+  </span>
+</span>
 {% endblock %}

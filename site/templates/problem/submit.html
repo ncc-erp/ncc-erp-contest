@@ -69,7 +69,6 @@
                 var customAdapter = $.fn.select2.amd.require('select2/data/customAdapter');
 
                 $("#id_language").select2({
-                    theme: '{{ DMOJ_SELECT2_THEME }}',
                     templateResult: format,
                     templateSelection: formatSelection,
                     resultsAdapter: customAdapter
@@ -127,9 +126,109 @@
 
 {% block media %}
     {{ form.media.css }}
+    {% compress css %}
+        <style media="screen">
+            #submit-wrapper {
+                margin-top: 0.7em;
+            }
+
+            #submit-wrapper #editor, #submit-wrapper #language {
+                margin-top: 4px;
+            }
+
+            #id_language {
+                width: 100%;
+            }
+
+            #result-version-info {
+                border-bottom: 1px solid rgb(148, 148, 148);
+                margin: 0px 1em;
+                color: #757575;
+                font-weight: 600;
+                padding: 0.2em 0;
+                text-align: right;
+            }
+
+            #language-select2 .select2-results__message {
+                white-space: nowrap
+            }
+
+            #language-select2.select2-dropdown--above {
+                display: flex;
+                flex-direction: column-reverse;
+            }
+
+            #language-select2 .select2-results__option {
+                color: #757575 !important;
+                background: white !important;
+            }
+
+            #language-select2 .select2-results__option--highlighted {
+                text-decoration: underline;
+            }
+
+            #language-select2 .select2-results__option[aria-selected=true] {
+                font-weight: bold;
+                color: black !important;
+            }
+
+            #language-select2 .select2-results__option {
+                padding: 4px 0px;
+            }
+
+            #language-select2 .select2-results__options {
+                overflow-y: visible !important;
+            }
+
+            #language-select2 .select2-results__option {
+                break-inside: avoid-column;
+            }
+
+            #language-select2 .select2-results {
+                -webkit-columns: 10 7em;
+                -moz-columns: 10 7em;
+                columns: 10 7em;
+                padding-left: 1.5em;
+                padding-top: 0.5em;
+            }
+            pre {
+                margin: 1.5em 0 1.5em 0;
+                padding: 1em;
+                border: 1px solid #e1e4e8;
+                background-color: #f8f8f8;
+                color: #000;
+                border-radius: 4px;
+                position: relative;
+                overflow: auto;
+                font-family: monospace;
+                font-size: 14px;
+                line-height: 1.45;
+            }
+            pre code {
+                background: none;
+                border: none;
+                padding: 0;
+                margin: 0;
+                font-size: inherit;
+                white-space: pre;
+            }
+        </style>
+    {% endcompress %}
 {% endblock %}
 
 {% block body %}
+   {% block description %}
+        {% cache 86400 'problem_html' problem.id MATH_ENGINE LANGUAGE_CODE %}
+            {{ description|markdown(problem.markdown_style, MATH_ENGINE)|reference|str|safe }}
+        {% endcache %}
+        {% with license=problem.license %}
+            {% if license %}
+                <span class="license">
+                <a href="{{ url('license', license.key) }}">{{ license.display or license.name }}</a>
+            </span>
+            {% endif %}
+        {% endwith %}
+    {% endblock %}
     <br>
     {% if not no_judges %}
         {% if default_lang not in form.fields.language.queryset %}
@@ -158,7 +257,7 @@
             {% endif %}
         {% endif %}
     {% endif %}
-
+    
     <form id="problem_submit" action="" method="post" class="form-area">
         {% csrf_token %}
         {{ form.non_field_errors() }}
@@ -185,7 +284,6 @@
         </div>
 
         <hr>
-
         {% if no_judges %}
             <span style="color: red">{{ _('No judge is available for this problem.') }}</span>
         {% else %}
@@ -196,4 +294,9 @@
             </div>
         {% endif %}
     </form>
+{% endblock %}
+{% block bodyend %}
+    {% if REQUIRE_JAX %}
+        {% include "mathjax-load.html" %}
+    {% endif %}
 {% endblock %}

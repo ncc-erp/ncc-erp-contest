@@ -144,7 +144,16 @@ class ProblemSubmitForm(ModelForm):
     class Meta:
         model = Submission
         fields = ['language']
-
+        
+class ProblemManualSubmitForm(ModelForm):
+    source = CharField(max_length=65536, widget=AceWidget(theme='twilight', no_ace_media=True))
+    def __init__(self, *args, judge_choices=(), **kwargs):
+        super(ProblemManualSubmitForm, self).__init__(*args, **kwargs)
+        self.fields['language'].empty_label = "text"
+        self.fields['language'].label_from_instance = attrgetter('display_name')
+    class Meta:
+        model = Submission
+        fields = ['language']
 
 class EditOrganizationForm(ModelForm):
     class Meta:

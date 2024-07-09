@@ -1,6 +1,9 @@
 {% set can_view, can_edit = submission_layout(submission, profile_id, request.user, completed_problem_ids, editable_problem_ids, tester_problem_ids) %}
 <div class="sub-result {{ submission.result_class }}">
-    <div class="score">
+    <div class="score">      
+        {% if submission.problem.is_manual_test %}
+        {{ submission.case_points|floatformat(0) }} / {{ submission.problem.points|floatformat(0) }}
+        {% else %}
         {%- if submission.is_graded -%}
             {%- if submission.status in ('IE', 'CE', 'AB') -%}
                 ---
@@ -10,10 +13,17 @@
         {%- else -%}
             <i class="fa fa-spinner fa-pulse grading-spinner"></i>
         {%- endif -%}
+        {% endif %}
+            
     </div>
 
     <div class="state">
-        <span title="{{ submission.long_status }}" class="status">{{ submission.short_status }}</span> |
+        
+        {% if submission.problem.is_manual_test %}
+            <span title="Submited" class="status">AC</span> |
+        {% else %}
+            <span title="{{ submission.long_status }}" class="status">{{ submission.short_status }}</span> |
+        {% endif %}
         <span class="language">{{ submission.language.short_display_name }}</span>
     </div>
 </div>
@@ -76,7 +86,7 @@
 </div>
 
 <div class="sub-usage">
-    {% if submission.status in ('QU', 'P', 'G', 'CE', 'IE', 'AB') %}
+    {% if submission.status in ('QU', 'P', 'G', 'CE', 'IE', 'AB') or submission.problem.is_manual_test %}
         <div class="time">---</div>
         <div class="memory">---</div>
     {% else %}

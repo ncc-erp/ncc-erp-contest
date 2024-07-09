@@ -6,9 +6,14 @@
 *.mo
 *~
 *.swp
+.DS_Store
 dmoj/local_settings.py
 resources/dark
 resources/martor-description.css
 resources/style.css
 resources/vars.scss
 sass_processed
+django_ace/static
+dmojsite
+.venv
+node_modules

@@ -1,7 +1,43 @@
 {% extends "base.html" %}
-
+{% block media %}
+    <style>
+        .submission-info{
+            display: flex;
+            gap: 20px;
+            float: right;
+        }
+        .submission-info form {
+            display: flex;
+            gap: 10px;
+            justify-content: right;
+            align-items: center;
+        }
+        .submission-info form #point{
+            width: 60px;
+        }
+        .submission-info form .btn-submit {
+            padding: 5px;
+            font-size: 14px;
+        }
+    </style>
+{% endblock%}
 {% block header %}
     <span class="submission-info">
+        {% if problem_type.name == "Manual Test"%}
+            <div class="mark">
+                <form action="{{ url('submission_update_point', submission.id) }}" method="post">
+                    {% csrf_token %}
+                    <span>{{ _('Mark') }}</span>:
+                    <input type="number" step="0.01" id="point" name="point" value="{{ submission.points }}" {% if not is_change_submission %}readonly{% endif %}> / <span class="totalPoint">{{ points }}</span>
+                    <input type="submit" value={{ _('Save')}} class='btn-submit'>
+                </form> 
+                {% if messages %}
+                    {% for message in messages %}
+                        <span {% if message.tags %} class="{{ message.tags }}" style="color: red" {% endif %}>{{ message }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        {% endif %}
         <span class="submission-date">
             {% with date=submission.date|date(_('N j, Y, g:i a')), can_edit=submission.problem.is_editable_by(request.user) %}
                 {% if can_edit and submission.judged_on %}

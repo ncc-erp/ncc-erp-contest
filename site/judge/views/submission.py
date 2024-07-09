@@ -197,6 +197,7 @@ class SubmissionStatus(SubmissionDetailBase):
         context['batches'], statuses, context['max_execution_time'] = group_test_cases(submission.test_cases.all())
         context['statuses'] = combine_statuses(statuses, submission)
         context['points'] = submission.problem.points
+
         context['time_limit'] = submission.problem.time_limit
         context['problem_type'] = ProblemType.objects.get(name="Manual Test")
         users = self.request.user.user_permissions.all()

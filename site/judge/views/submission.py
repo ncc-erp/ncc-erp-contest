@@ -18,6 +18,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _, gettext_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView
+from django.contrib import messages
 
 from judge import event_poster as event
 from judge.highlight_code import highlight_code
@@ -195,8 +196,12 @@ class SubmissionStatus(SubmissionDetailBase):
         context['highlighted_source'] = highlight_code(submission.source.source, submission.language.pygments)
         context['batches'], statuses, context['max_execution_time'] = group_test_cases(submission.test_cases.all())
         context['statuses'] = combine_statuses(statuses, submission)
-
+        context['points'] = submission.problem.points
         context['time_limit'] = submission.problem.time_limit
+        context['problem_type'] = ProblemType.objects.get(name="Manual Test")
+        users = self.request.user.user_permissions.all()
+        is_change_submission = any(perm.codename == 'change_submission' for perm in users)
+        context['is_change_submission'] = is_change_submission
         try:
             lang_limit = submission.problem.language_limits.get(language=submission.language)
         except ObjectDoesNotExist:
@@ -205,6 +210,18 @@ class SubmissionStatus(SubmissionDetailBase):
             context['time_limit'] = lang_limit.time_limit
         return context
 
+@require_POST
+def update_point(request, submission):
+    submission = get_object_or_404(Submission, id=int(submission))
+    total_points = submission.problem.points 
+    if float(request.POST['point']) > total_points:
+        messages.error(request, 'Points cannot be greater than total points for the problem.')
+        return HttpResponseRedirect(reverse('submission_status', args=(submission.id,)))  
+    submission.points = float(request.POST['point'])
+    submission.save()
+    messages.success(request, "Success!")
+    print(request.POST['point'])
+    return HttpResponseRedirect(reverse('submission_status', args=(submission.id,)))
 
 class SubmissionTestCaseQuery(SubmissionStatus):
     template_name = 'submission/status-testcases.html'

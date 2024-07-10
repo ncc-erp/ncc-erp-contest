@@ -147,7 +147,6 @@ urlpatterns = [
 
     path('submission/<int:submission>', include([
         path('', submission.SubmissionStatus.as_view(), name='submission_status'),
-        path('/update_point', submission.update_point, name='submission_update_point'),
         path('/abort', submission.abort_submission, name='submission_abort'),
     ])),
     path('submission/review-points', submission.reviewPoint, name='review_point'),

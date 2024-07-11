@@ -62,9 +62,13 @@ def reviewPoint(request):
     if not point or point < 0 or point > submission.problem.points:
         return HttpResponseRedirect(reverse('submission_status', args=(submission.id,)))
     submission.case_points = point
+    submission.points = point
     submission.result = 'AC'
-    submission.save(update_fields=['case_points'])
+    submission.status ='AC'
+    submission.save(update_fields=['points'])
+    submission.save(update_fields=['status'])   
     submission.save(update_fields=['result'])
+    submission.save(update_fields=['case_points'])
     return HttpResponseRedirect(reverse('submission_status', args=(submission.id,)))
 class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, DetailView):
     def get_object(self, queryset=None):

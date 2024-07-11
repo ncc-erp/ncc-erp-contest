@@ -620,13 +620,12 @@ class ProblemSubmit(LoginRequiredMixin, ProblemMixin, TitleMixin, SingleObjectFo
         # if not problem.types.filter(name=problem_type).exists():
         #     first_type = problem.types.first()
         #     return HttpResponseRedirect(reverse('problem_submit', args=[problem.code]) + '?type=' + first_type.name)  
-        match problem_type:
-            case 'manual_test':
-                self.template_name = 'problem/submit-manual.html'
-                self.form_class = ProblemManualSubmitForm
-            case _:
-                self.template_name = 'problem/submit.html'
-                self.form_class = ProblemSubmitForm
+        if problem_type == 'manual_test':
+            self.form_class = ProblemManualSubmitForm
+            self.template_name = 'problem/submit-manual.html'
+        else:
+            self.form_class = ProblemSubmitForm
+            self.template_name = 'problem/submit.html'
         return self.template_name, self.form_class
             
     @cached_property

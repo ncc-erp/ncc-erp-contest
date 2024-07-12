@@ -17,3 +17,4 @@ django_ace/static
 dmojsite
 .venv
 node_modules
+site/static

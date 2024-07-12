@@ -3,7 +3,25 @@
  
 {% block media %}
     <link rel="stylesheet" href="{{ static('login.css') }}">
-   
+   <style>
+        body {
+            -ms-overflow-style: none; 
+            scrollbar-width: hidden;  
+        }
+
+        body::-webkit-scrollbar {
+            display: none;  
+        }
+
+        .debug {
+            -ms-overflow-style: none;  
+            scrollbar-width: none; 
+        }
+
+        .debug::-webkit-scrollbar {
+            display: none;  
+        }
+   </style>
 {% endblock %}
 
 {% block body %}

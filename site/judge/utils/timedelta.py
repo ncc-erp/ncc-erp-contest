@@ -2,8 +2,10 @@ import datetime
 
 from django.utils.translation import ngettext, npgettext, pgettext
 
+from django.utils import timezone
 
-def nice_repr(timedelta, display='long', sep=', '):
+
+def nice_repr(timedelta = timezone.now(), display='long', sep=', '):
     """
     Turns a datetime.timedelta object into a nice string repr.
 

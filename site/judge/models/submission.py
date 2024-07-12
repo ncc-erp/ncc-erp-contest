@@ -92,10 +92,8 @@ class Submission(models.Model):
     @classmethod
     def result_class_from_code(cls, submission):
         if submission.result == 'AC':
-            if submission.problem.is_manual_test and submission.case_points > 0:
+            if (submission.problem.is_manual_test and submission.case_points > 0):
                 return 'AC'
-            else:
-                return '_AC'
             if submission.case_points == submission.case_total:
                 return 'AC'
             return '_AC'

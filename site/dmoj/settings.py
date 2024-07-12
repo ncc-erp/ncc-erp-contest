@@ -537,7 +537,7 @@ TIME_ZONE = 'UTC'
 DEFAULT_USER_TIME_ZONE = 'America/Toronto'
 USE_I18N = True
 USE_L10N = True
-USE_TZ = False
+USE_TZ = True
 SEND_ACTIVATION_EMAIL = True
 REGISTRATION_OPEN = True
 # Cookies

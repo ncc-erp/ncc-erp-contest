@@ -119,6 +119,33 @@
                 });
             });
         </script>
+        <style>
+          .panel{
+            display: block
+          }
+          pre {
+                margin: 1.5em 0 1.5em 0;
+                padding: 1em;
+                border: 1px solid #e1e4e8;
+                background-color: #f8f8f8;
+                color: #000;
+                border-radius: 4px;
+                position: relative;
+                overflow: auto;
+                font-family: monospace;
+                font-size: 14px;
+                line-height: 1.45;
+            }
+            pre code {
+                background: none;
+                border: none;
+                padding: 0;
+                margin: 0;
+                font-size: inherit;
+                white-space: pre;
+            }
+        </style>
+
   {% endcompress %}
 {% endblock %}
 
@@ -128,7 +155,7 @@
 
 {% block body %}
   <div class="submission-header">
-    <button class="accordion">{{ problem.name }}</button>
+    <button class="accordion active">{{ problem.name }}</button>
     <div class="panel">
       <div class="problem-statement">{{ problem.description|markdown(problem.markdown_style, MATH_ENGINE)|reference|str|safe }}</div>
     </div>
@@ -196,10 +223,10 @@
         this.classList.toggle("active");
         /* Toggle between hiding and showing the active panel */
         var panel = this.nextElementSibling;
-        if (panel.style.display === "block") {
-          panel.style.display = "none";
-        } else {
+        if (panel.style.display === "none") {
           panel.style.display = "block";
+        } else {
+          panel.style.display = "none";
         }
       });
     }

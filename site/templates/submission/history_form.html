@@ -1,0 +1,48 @@
+
+<div class="sidebox">
+    <h3>{{ _('History')}}  
+    <div class="panel">
+    </h3>
+    
+    <div class="sidebox-content">
+        <table class= "table">
+            <tr>
+                <th>STT</th>
+                <th>{{ _('User')}}</th>
+                <th>{{ _('Points')}} </th>
+                <th>{{ _('Time')}} </th>
+            </tr>
+            <tr>
+                <td>0</td>
+                <td>Test</td>
+                <td>10</td>
+                <td>15/07/2024</td>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td>Test</td>
+                <td>10</td>
+                <td>15/07/2024</td>
+            </tr>
+        </table>
+       
+       
+    </div>
+</div>
+<script>
+    var acc = document.getElementsByClassName("accordion");
+    for (var i = 0; i < acc.length; i++) {
+      acc[i].addEventListener("click", function () {
+        /* Toggle between adding and removing the "active" class,
+        to highlight the button that controls the panel */
+        this.classList.toggle("active");
+        /* Toggle between hiding and showing the active panel */
+        var panel = this.nextElementSibling;
+        if (panel.style.display === "none") {
+          panel.style.display = "block";
+        } else {
+          panel.style.display = "none";
+        }
+      });
+    }
+  </script>

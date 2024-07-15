@@ -22,6 +22,7 @@ from django.views.generic import DetailView, ListView
 from judge import event_poster as event
 from judge.highlight_code import highlight_code
 from judge.models import Contest, Language, Problem, ProblemTranslation, Profile, Submission
+from judge.models.submission import SubmissionPointsHistory
 from judge.models.problem import SubmissionSourceAccess
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.utils.lazy import memo_lazy
@@ -61,7 +62,10 @@ def reviewPoint(request):
     point = int(point_str)
     if not point or point < 0 or point > submission.problem.points:
         return HttpResponseRedirect(reverse('submission_status', args=(submission.id,)))
-    submission.case_points = submission.points = point
+    
+    points_history = SubmissionPointsHistory(submission=submission, points=point, reviewer=request.profile)
+    points_history.save()
+    submission.case_points = submission.points = points_history.points
     submission.result = submission.status = 'AC'
     submission.save(update_fields=['points', 'case_points', 'result', 'status'])
     return HttpResponseRedirect(reverse('submission_status', args=(submission.id,)))
@@ -189,6 +193,7 @@ class SubmissionStatus(SubmissionDetailBase):
     def get_context_data(self, **kwargs):
         context = super(SubmissionStatus, self).get_context_data(**kwargs)
         submission = self.object
+        
         context['last_msg'] = event.last()
         context['raw_source'] = submission.source.source.rstrip('\n')
         context['highlighted_source'] = highlight_code(submission.source.source, submission.language.pygments)

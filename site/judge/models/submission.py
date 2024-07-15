@@ -88,11 +88,13 @@ class Submission(models.Model):
     contest_object = models.ForeignKey('Contest', verbose_name=_('contest'), null=True, blank=True,
                                        on_delete=models.SET_NULL, related_name='+', db_index=False)
     locked_after = models.DateTimeField(verbose_name=_('submission lock'), null=True, blank=True)
+    points_histories = models.ManyToManyField('SubmissionPointsHistory', verbose_name=_('points history'),
+                                              related_name='submissions', blank=True)
 
     @classmethod
     def result_class_from_code(cls, submission):
         if submission.result == 'AC':
-            if (submission.problem.is_manual_test and submission.case_points > 0):
+            if (submission.problem.is_manual_test and submission.last_score > 0):
                 return 'AC'
             if submission.case_points == submission.case_total:
                 return 'AC'
@@ -163,9 +165,9 @@ class Submission(models.Model):
         contest = self.contest_object
         # If user is an author or curator of the contest the submission was made in, or they can see in-contest subs
         if contest is not None and (
-            user.profile.id in contest.editor_ids or
-            contest.view_contest_submissions.filter(id=user.profile.id).exists() or
-            (contest.tester_see_submissions and user.profile.id in contest.tester_ids)
+                user.profile.id in contest.editor_ids or
+                contest.view_contest_submissions.filter(id=user.profile.id).exists() or
+                (contest.tester_see_submissions and user.profile.id in contest.tester_ids)
         ):
             return True
 
@@ -214,11 +216,26 @@ class Submission(models.Model):
     @classmethod
     def get_id_secret(cls, sub_id):
         return (hmac.new(utf8bytes(settings.EVENT_DAEMON_SUBMISSION_KEY), b'%d' % sub_id, hashlib.sha512)
-                    .hexdigest()[:16] + '%08x' % sub_id)
+                .hexdigest()[:16] + '%08x' % sub_id)
 
     @cached_property
     def id_secret(self):
         return self.get_id_secret(self.id)
+
+    @property
+    def highest_score(self):
+        highest_time = self.points_history.order_by('points').first()
+        if highest_time:
+            return highest_time.points
+        return 0
+    
+    @property
+    def last_score(self):
+        last_time = self.points_history.order_by('date').first()
+        if last_time:
+            return last_time.points
+        return 0
+    
 
     class Meta:
         permissions = (
@@ -305,3 +322,18 @@ class SubmissionTestCase(models.Model):
         unique_together = ('submission', 'case')
         verbose_name = _('submission test case')
         verbose_name_plural = _('submission test cases')
+
+
+class SubmissionPointsHistory(models.Model):
+    submission = models.ForeignKey(Submission, verbose_name=_('associated submission'), db_index=True,
+                                   related_name='points_history', on_delete=models.CASCADE)
+    points = models.FloatField(verbose_name=_('points granted'), null=True)
+    date = models.DateTimeField(verbose_name=_('submission time'), auto_now_add=True, db_index=True)
+    reviewer = models.ForeignKey(Profile, verbose_name=_('reviewer'), on_delete=models.CASCADE, db_index=False)
+
+    class Meta:
+        verbose_name = _('submission points history')
+        verbose_name_plural = _('submission points history')
+        indexes = [
+            models.Index(fields=['submission', '-date']),
+        ]

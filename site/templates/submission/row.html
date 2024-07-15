@@ -2,7 +2,7 @@
 <div class="sub-result {{ submission.result_class }}">
     <div class="score">      
         {% if submission.problem.is_manual_test %}
-        {{ submission.case_points|floatformat(0) }} / {{ submission.problem.points|floatformat(0) }}
+        {{ submission.last_score|floatformat(0) }} / {{ submission.problem.points|floatformat(0) }}
         {% else %}
         {%- if submission.is_graded -%}
             {%- if submission.status in ('IE', 'CE', 'AB') -%}

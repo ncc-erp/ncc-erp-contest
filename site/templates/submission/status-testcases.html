@@ -1,23 +1,21 @@
 <style>
-   
-    .content-right{
-        float:right;
-        min-width:300px;
-        display:block
-    }
-    .info-float{
-        width:100%
-
-    }
-    .accordion{
-    width:40px;
-    height:40px;
-    float:right;
-     display: flex;
-    justify-content: center; 
-    align-items: center; 
-   margin-top:-40px
-}
+  .content-right {
+    float: right;
+    min-width: 300px;
+    display: block;
+  }
+  .info-float {
+    width: 100%;
+  }
+  .accordion {
+    width: 40px;
+    height: 40px;
+    float: right;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: -40px;
+  }
 </style>
 <div class="content-left">
   {% if submission.contest_or_none %} {% set prefix_length =
@@ -196,10 +194,12 @@
   {% endif %} {% endif %} {% else %} {% include
   "submission/internal-error-message.html" %} {% endif %} {% endif %}
 </div>
+{% if submission.problem.is_manual_test and submission.problem.is_reviewable_by(request.user) %}
 <div class="content-right">
-
   <div class="info-float">
     <button class="accordion active"></button>
     {% include "submission/history_form.html" %} 
   </div>
 </div>
+{% endif %}
+  

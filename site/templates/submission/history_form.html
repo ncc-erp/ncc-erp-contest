@@ -1,32 +1,40 @@
-
 <div class="sidebox">
-    <h3>{{ _('History')}}  
+    <h3>{{ _('Edit History')}}
     <div class="panel">
     </h3>
     
     <div class="sidebox-content">
         <table class= "table">
+          <thead>
             <tr>
                 <th>STT</th>
                 <th>{{ _('User')}}</th>
                 <th>{{ _('Points')}} </th>
                 <th>{{ _('Time')}} </th>
             </tr>
-            <tr>
-                <td>0</td>
-                <td>Test</td>
-                <td>10</td>
-                <td>15/07/2024</td>
-            </tr>
-            <tr>
-                <td>1</td>
-                <td>Test</td>
-                <td>10</td>
-                <td>15/07/2024</td>
-            </tr>
+          </thead>
+          <tbody>
+            
+            {% if submission.points_history.count() > 0 %}
+              {% for item in submission.points_history.order_by('date').all() %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ item.reviewer.user.username }}</td>
+                    <td>{{ item.points }}</td>
+                    <td>{{ relative_time(item.date)}}</td>
+                </tr>
+              {% endfor %}
+            {% else %}
+                <tr>
+                  <td  colspan="4">
+                    <span>{{_('No data')}}</span>
+                  </td>
+                </tr>
+            {% endif %}
+              
+          </tbody>
+            
         </table>
-       
-       
     </div>
 </div>
 <script>

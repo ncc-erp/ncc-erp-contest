@@ -707,12 +707,11 @@ class ProblemSubmit(LoginRequiredMixin, ProblemMixin, TitleMixin, SingleObjectFo
 
     def form_valid(self, form):
         problem_type = self.request.GET.get('type') or 'normal'
-        if (
-            not self.request.user.has_perm('judge.spam_submission') and
-            Submission.objects.filter(user=self.request.profile, rejudged_date__isnull=True)
-                              .exclude(status__in=['D', 'IE', 'CE', 'AB']).count() >= settings.DMOJ_SUBMISSION_LIMIT
-        ):
-            return HttpResponse(format_html('<h1>{0}</h1>', _('You submitted too many submissions.')), status=429)
+        if (problem_type != 'manual_test'):
+            if (not self.request.user.has_perm('judge.spam_submission') and
+                Submission.objects.filter(user=self.request.profile, rejudged_date__isnull=True)
+                                .exclude(status__in=['D', 'IE', 'CE', 'AB']).count() >= settings.DMOJ_SUBMISSION_LIMIT):
+                return HttpResponse(format_html('<h1>{0}</h1>', _('You submitted too many submissions.')), status=429)
         
         if problem_type != 'manual_test' and not self.object.allowed_languages.filter(id=form.cleaned_data['language'].id).exists():
             raise PermissionDenied()
@@ -767,7 +766,6 @@ class ProblemSubmit(LoginRequiredMixin, ProblemMixin, TitleMixin, SingleObjectFo
     
     def get(self, request, *args, **kwargs):
         try:
-            problem_type = request.GET.get('type') or 'normal'
             problem_type = request.GET.get('type') or 'normal'
             problem = self.get_object()
             if not problem.types.filter(name=problem_type).exists():

@@ -231,7 +231,7 @@ class Submission(models.Model):
     
     @property
     def last_score(self):
-        last_time = self.points_history.order_by('date').first()
+        last_time = self.points_history.last()
         if last_time:
             return last_time.points
         return 0

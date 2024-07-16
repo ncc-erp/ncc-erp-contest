@@ -35,7 +35,7 @@
                         {% csrf_token %}
                         <span class="point-label">{{_('Point: ')}}</span>
                         <input type="hidden" name="submission_id" value="{{submission.id}}">
-                        <input id="point" type="number" name="point" value="{{submission.case_points|floatformat or '0'}}">
+                        <input id="point" type="number" name="point" value="{{submission.last_score|floatformat or '0'}}">
                         <span class="point-label">/{{submission.problem.points|floatformat}}</span>
                         <button type="submit">{{_('Save')}}</button>
                     </form>

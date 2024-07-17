@@ -119,7 +119,7 @@
                 });
             });
         </script>
-        <style>
+  <style>
           .panel{
             display: block
           }
@@ -155,7 +155,10 @@
 
 {% block body %}
   <div class="submission-header">
-    <button class="accordion active">{{ problem.name }}</button>
+    <button class="accordion active">
+      {{ problem.name }}
+      <span class="detail-btn">{{ _('– Click to see problem detail') }}</span>
+    </button>
     <div class="panel">
       <div class="problem-statement">{{ problem.description|markdown(problem.markdown_style, MATH_ENGINE)|reference|str|safe }}</div>
     </div>

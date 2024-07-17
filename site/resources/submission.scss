@@ -383,7 +383,11 @@ label[for="language"], label[for="status"] {
     float: right;
     margin-left: 5px;
   }
-  
+  .detail-btn {
+    font-size: 0.8em;
+    color: #666;
+    margin-left: 16px;
+  }
   .active:after {
     content: "\2796"; /* Unicode character for "minus" sign (-) */
   }

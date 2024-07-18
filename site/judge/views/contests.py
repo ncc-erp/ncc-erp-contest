@@ -800,7 +800,6 @@ class ContestParticipationList(LoginRequiredMixin, ContestRankingBase):
             self.profile = self.request.profile
         return super().get(request, *args, **kwargs)
 
-
 class ContestParticipationDisqualify(ContestMixin, SingleObjectMixin, View):
     def get_object(self, queryset=None):
         contest = super().get_object(queryset)

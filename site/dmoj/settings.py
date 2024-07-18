@@ -21,6 +21,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
+# Application definition
+SITE_VERSION = '1.1.12'
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '5*9f5q57mqmlz2#f$x1h76&jxy#yortjl1v+l*6hd18$d*yx#0'
 
@@ -345,6 +348,7 @@ TEMPLATES = [
                 'judge.template_context.site_theme',
                 'judge.template_context.misc_config',
                 'judge.template_context.math_setting',
+                'judge.template_context.site_version',
                 'social_django.context_processors.backends',
                 'social_django.context_processors.login_redirect',
             ],

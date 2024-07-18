@@ -69,11 +69,12 @@ def reviewPoint(request):
     submission.result = submission.status = 'AC'
     submission.save(update_fields=['points', 'case_points', 'result', 'status'])
     contest_submission = submission.contest
-    if contest_submission:
+    if contest_submission and submission.contest_object.is_spectatable_by(request.user):
         contest_submission.points = points_history.points
         contest_submission.save(update_fields=['points'])
         contest_submission.participation.recompute_results()
-    return HttpResponseRedirect(reverse('submission_status', args=(submission.id,)))
+        return HttpResponseRedirect(reverse('contest_all_user_submissions', args=(submission.contest_key, contest_submission.participation.user.username)))
+    return HttpResponseRedirect(reverse('all_user_submissions', args=(submission.user.username)))
 class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, DetailView):
     def get_object(self, queryset=None):
         submission = super(SubmissionDetailBase, self).get_object(queryset)

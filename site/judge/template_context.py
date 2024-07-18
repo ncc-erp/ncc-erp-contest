@@ -78,6 +78,9 @@ def site_name(request):
     return {'SITE_NAME': settings.SITE_NAME,
             'SITE_LONG_NAME': settings.SITE_LONG_NAME,
             'SITE_ADMIN_EMAIL': settings.SITE_ADMIN_EMAIL}
+    
+def site_version(request):
+    return {'site_version': settings.SITE_VERSION}
 
 
 def site_theme(request):

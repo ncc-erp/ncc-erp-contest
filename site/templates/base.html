@@ -292,7 +292,7 @@
         <span id="footer-content">
             
             <br>
-            <span>{{ _('Version 1.1.1 |')}}</span>
+            <span>{{ _('Version')}} {{site_version}} | </span>
             <a style="color: #808080" href="https://dmoj.ca">{{ _('proudly powered by **DMOJ**')|markdown('default', strip_paragraphs=True) }}</a> |
             {% if misc_config.footer %}
                 {{ misc_config.footer|safe }} |

@@ -8,6 +8,7 @@ from operator import attrgetter, itemgetter
 
 from django import forms
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.db import IntegrityError
@@ -674,17 +675,23 @@ def base_contest_ranking_list(contest, problems, queryset):
             queryset.select_related('user__user', 'rating').defer('user__about', 'user__organizations__about')]
 
 
-def contest_ranking_list(contest, problems):
-    return base_contest_ranking_list(contest, problems, contest.users.filter(virtual=0)
+def contest_ranking_list(request, contest, problems):
+    user_name = request.GET.get('user_name')
+    user = User.objects.filter(username=user_name).first()  
+    if not user_name or not user:
+        return base_contest_ranking_list(contest, problems, contest.users.filter(virtual=0)
+                                         .prefetch_related('user__organizations')
+                                         .order_by('is_disqualified', '-score', 'cumtime', 'tiebreaker'))
+    user_profile = Profile.objects.filter(user_id=user.id).first()
+    return base_contest_ranking_list(contest, problems, contest.users.filter(virtual=0, user_id=user_profile.id)
                                      .prefetch_related('user__organizations')
                                      .order_by('is_disqualified', '-score', 'cumtime', 'tiebreaker'))
-
 
 def get_contest_ranking_list(request, contest, participation=None, ranking_list=contest_ranking_list,
                              show_current_virtual=True, ranker=ranker):
     problems = list(contest.contest_problems.select_related('problem').defer('problem__description').order_by('order'))
 
-    users = ranker(ranking_list(contest, problems), key=attrgetter('points', 'cumtime', 'tiebreaker'))
+    users = ranker(ranking_list(request ,contest, problems), key=attrgetter('points', 'cumtime', 'tiebreaker'))
 
     if show_current_virtual:
         if participation is None and request.user.is_authenticated:

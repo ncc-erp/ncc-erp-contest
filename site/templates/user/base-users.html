@@ -1,8 +1,9 @@
-{% extends "common-content.html" %}
+{% extends 'common-content.html' %}
 
 {% block js_media %}
-    {% block users_js_media %}{% endblock %}
-    <script>
+  {% block users_js_media %}
+  {% endblock %}
+  <script>
         $(function () {
             $('#search-handle').replaceWith($('<select>').attr({
                 id: 'search-handle',
@@ -46,32 +47,36 @@
 {% endblock %}
 
 {% block media %}
-    {% block users_media %}{% endblock %}
+  {% block users_media %}
+  {% endblock %}
 {% endblock %}
 
 {% block body %}
-    {% if page_obj and page_obj.has_other_pages() %}
-        <div class="top-pagination-bar">
-            {% include "list-pages.html" %}
-            {% if not organization %}
-                <form id="search-form" name="form" action="{{ url('user_ranking_redirect') }}" method="get">
-                    <input id="search-handle" type="text" name="search"
-                           placeholder="{{ _('Search by handle...') }}">
-                </form>
-            {% endif %}
-        </div>
-    {% endif %}
-
-    <div id="common-content">
-        <div id="content-left" class="users">
-            {% block before_users_table %}{% endblock %}
-
-            <div class="h-scrollable-table">
-                {% block users_table %}{% endblock %}
-            </div>
-        </div>
+  {% if page_obj and page_obj.has_other_pages() %}
+    <div class="top-pagination-bar">
+      {% include 'list-pages.html' %}
+      {% if not organization %}
+        <form id="search-form" name="form" action="{{ url('user_ranking_redirect') }}" method="get">
+          <input id="search-handle" type="text" name="search" placeholder="{{ _('Search by handle...') }}" />
+        </form>
+      {% endif %}
     </div>
-    {% if page_obj and page_obj.has_other_pages() %}
-        <div class="bottom-pagination-bar">{% include "list-pages.html" %}</div>
-    {% endif %}
+  {% endif %}
+
+  <div id="common-content">
+    <div id="content-left" class="users">
+      {% block before_users_table %}
+      {% endblock %}
+
+      <div class="h-scrollable-table">
+        {% block users_table %}
+        {% endblock %}
+      </div>
+    </div>
+  </div>
+  {% if page_obj and page_obj.has_other_pages() %}
+    <div class="bottom-pagination-bar">
+      {% include 'list-pages.html' %}
+    </div>
+  {% endif %}
 {% endblock %}

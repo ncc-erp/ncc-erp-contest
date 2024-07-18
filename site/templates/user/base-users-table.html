@@ -21,7 +21,7 @@
             <td>{{ rank }}</td>
             {% block after_rank scoped %}{% endblock %}
             
-            {% if not contest or not contest.can_see_full_scoreboard(request.user) %}
+            {% if not contest or not contest.can_see_full_scoreboard(request.user) or not contest.is_spectatable_by(request.user) %}
                 <td class="user-name">{{ link_user(user) }} {% block user_data scoped %}{% endblock %}</td>
             {% else %}
                 <td class="user-name"><a href="{{ url('contest_all_user_submissions', contest.key, user.user.username) }}">{{ user.user.username }}</a></td>                

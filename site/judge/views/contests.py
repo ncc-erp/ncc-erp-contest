@@ -690,11 +690,12 @@ def contest_ranking_list(request, contest, problems):
 
 
 def get_contest_ranking_list(request, contest, participation=None, ranking_list=contest_ranking_list,
-                             show_current_virtual=True, ranker=ranker):
+                             show_current_virtual=False, ranker=ranker):
     problems = list(contest.contest_problems.select_related('problem').defer('problem__description').order_by('order'))
-
-    users = ranker(ranking_list(request, contest, problems), key=attrgetter('points', 'cumtime', 'tiebreaker'))
-
+    if (ranking_list is contest_ranking_list):
+        users = ranker(ranking_list(request, contest, problems), key=attrgetter('points', 'cumtime', 'tiebreaker'))
+    else:
+        users = ranker(ranking_list(contest, problems), key=attrgetter('points', 'cumtime', 'tiebreaker'))
     if show_current_virtual:
         if participation is None and request.user.is_authenticated:
             participation = request.profile.current_contest
@@ -791,7 +792,7 @@ class ContestParticipationList(LoginRequiredMixin, ContestRankingBase):
                                 reverse('contest_ranking', args=[self.object.key]))
         return get_contest_ranking_list(
             self.request, self.object, show_current_virtual=False,
-            # ranking_list=partial(base_contest_ranking_list, queryset=queryset),
+            ranking_list=partial(base_contest_ranking_list, queryset=queryset),
             ranker=lambda users, key: ((user.participation.virtual or live_link, user) for user in users))
 
     def get_context_data(self, **kwargs):

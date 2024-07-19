@@ -122,10 +122,11 @@ class ContestList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ContestL
 
         if self.request.user.is_authenticated:
             for participation in (
-                ContestParticipation.objects.filter(virtual=0, user=self.request.profile, contest_id__in=present)
-                .select_related('contest')
-                .prefetch_related('contest__authors', 'contest__curators', 'contest__testers', 'contest__spectators')
-                .annotate(key=F('contest__key'))
+                    ContestParticipation.objects.filter(virtual=0, user=self.request.profile, contest_id__in=present)
+                            .select_related('contest')
+                            .prefetch_related('contest__authors', 'contest__curators', 'contest__testers',
+                                              'contest__spectators')
+                            .annotate(key=F('contest__key'))
             ):
                 if participation.ended:
                     finished.add(participation.contest.key)
@@ -271,10 +272,10 @@ class ContestDetail(ContestMixin, TitleMixin, CommentedDetailView):
         context['contest_problems'] = Problem.objects.filter(contests__contest=self.object) \
             .order_by('contests__order').defer('description') \
             .annotate(has_public_editorial=Case(
-                When(solution__is_public=True, solution__publish_on__lte=timezone.now(), then=True),
-                default=False,
-                output_field=BooleanField(),
-            )) \
+            When(solution__is_public=True, solution__publish_on__lte=timezone.now(), then=True),
+            default=False,
+            output_field=BooleanField(),
+        )) \
             .add_i18n_name(self.request.LANGUAGE_CODE)
         context['metadata'] = {
             'has_public_editorials': any(
@@ -586,7 +587,7 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
 
         status_count_queryset = list(
             queryset.values('problem__code', 'result').annotate(count=Count('result'))
-                    .values_list('problem__code', 'result', 'count'),
+            .values_list('problem__code', 'result', 'count'),
         )
         labels, codes = [], []
         contest_problems = self.object.contest_problems.order_by('order').values_list('problem__name', 'problem__code')
@@ -617,15 +618,15 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
             },
             'problem_ac_rate': get_bar_chart(
                 queryset.values('contest__problem__order', 'problem__name').annotate(ac_rate=ac_rate)
-                        .order_by('contest__problem__order').values_list('problem__name', 'ac_rate'),
+                .order_by('contest__problem__order').values_list('problem__name', 'ac_rate'),
             ),
             'language_count': get_pie_chart(
                 queryset.values('language__name').annotate(count=Count('language__name'))
-                        .filter(count__gt=0).order_by('-count').values_list('language__name', 'count'),
+                .filter(count__gt=0).order_by('-count').values_list('language__name', 'count'),
             ),
             'language_ac_rate': get_bar_chart(
                 queryset.values('language__name').annotate(ac_rate=ac_rate)
-                        .filter(ac_rate__gt=0).values_list('language__name', 'ac_rate'),
+                .filter(ac_rate__gt=0).values_list('language__name', 'ac_rate'),
             ),
         }
 
@@ -677,7 +678,7 @@ def base_contest_ranking_list(contest, problems, queryset):
 
 def contest_ranking_list(request, contest, problems):
     user_name = request.GET.get('user_name')
-    user = User.objects.filter(username=user_name).first()  
+    user = User.objects.filter(username=user_name).first()
     if not user_name or not user:
         return base_contest_ranking_list(contest, problems, contest.users.filter(virtual=0)
                                          .prefetch_related('user__organizations')
@@ -687,11 +688,12 @@ def contest_ranking_list(request, contest, problems):
                                      .prefetch_related('user__organizations')
                                      .order_by('is_disqualified', '-score', 'cumtime', 'tiebreaker'))
 
+
 def get_contest_ranking_list(request, contest, participation=None, ranking_list=contest_ranking_list,
                              show_current_virtual=True, ranker=ranker):
     problems = list(contest.contest_problems.select_related('problem').defer('problem__description').order_by('order'))
 
-    users = ranker(ranking_list(request ,contest, problems), key=attrgetter('points', 'cumtime', 'tiebreaker'))
+    users = ranker(ranking_list(request, contest, problems), key=attrgetter('points', 'cumtime', 'tiebreaker'))
 
     if show_current_virtual:
         if participation is None and request.user.is_authenticated:
@@ -785,12 +787,11 @@ class ContestParticipationList(LoginRequiredMixin, ContestRankingBase):
             raise Http404()
 
         queryset = self.object.users.filter(user=self.profile, virtual__gte=0).order_by('-virtual')
-        live_link = format_html('<a href="{2}#!{1}">{0}</a>', _('Live'), self.profile.username,
+        live_link = format_html('<a href="{2}?user_name={1}">{0}</a>', _('Live'), self.profile.username,
                                 reverse('contest_ranking', args=[self.object.key]))
-
         return get_contest_ranking_list(
             self.request, self.object, show_current_virtual=False,
-            ranking_list=partial(base_contest_ranking_list, queryset=queryset),
+            # ranking_list=partial(base_contest_ranking_list, queryset=queryset),
             ranker=lambda users, key: ((user.participation.virtual or live_link, user) for user in users))
 
     def get_context_data(self, **kwargs):
@@ -806,6 +807,7 @@ class ContestParticipationList(LoginRequiredMixin, ContestRankingBase):
         else:
             self.profile = self.request.profile
         return super().get(request, *args, **kwargs)
+
 
 class ContestParticipationDisqualify(ContestMixin, SingleObjectMixin, View):
     def get_object(self, queryset=None):
@@ -846,7 +848,7 @@ class ContestMossView(ContestMossMixin, TitleMixin, DetailView):
         context = super().get_context_data(**kwargs)
 
         problems = list(map(attrgetter('problem'), self.object.contest_problems.order_by('order')
-                                                              .select_related('problem')))
+                            .select_related('problem')))
         languages = list(map(itemgetter(0), ContestMoss.LANG_MAPPING))
 
         results = ContestMoss.objects.filter(contest=self.object)

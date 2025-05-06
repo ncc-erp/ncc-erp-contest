@@ -1,6 +1,10 @@
+import base64
 import itertools
 import json
 import os
+import hmac
+import hashlib
+from urllib.parse import parse_qsl
 from datetime import datetime
 from operator import attrgetter, itemgetter
 import requests
@@ -160,7 +164,7 @@ class CustomLoginCallbackView(LoginView):
         
         if not auth_code:
             # Handle error, e.g., missing authorization code
-            return redirect_to_login()
+            return redirect('auth_login')
         
         mezon_auth_url = getattr(settings, 'MEZON_AUTH_URL')
         mezon_client_id = getattr(settings, 'MEZON_AUTH_CLIENT_ID')
@@ -208,6 +212,53 @@ class CustomLoginCallbackView(LoginView):
             return response.json()  # Assuming the user data is returned in JSON format
         else:
             raise Exception('Unable to fetch user data from the provider')
+class CustomLoginHashView(LoginView):
+    template_name = 'registration/callback_login.html'
+    extra_context = {'title': gettext_lazy('Mezon Authentication')}
+    redirect_authenticated_user = True
+
+    def get(self, request, *args, **kwargs):
+        base64_data = request.GET.get('mezon_auth', '')
+        if not base64_data:
+            # Handle error, e.g., missing authorization code
+            return redirect_to_login()
+        auth_data = base64.b64decode(base64_data).decode('utf-8')
+        mezon_app_token = getattr(settings, 'MEZON_APP_TOKEN')
+        secret_key = self.HMAC_SHA256(mezon_app_token, "WebAppData")
+        # is_valid = self.validate_hash(auth_data, secret_key)
+        # if not is_valid:
+        #     return redirect_to_login()
+        data_parsed = dict(parse_qsl(auth_data))
+        user_data = json.loads(data_parsed.get('user'))
+        # Process user data and log in the user
+        user_email = user_data.get('mezon_id')
+        login_user = User.objects.filter(email=user_email).first()
+        if not login_user:
+            messages.error(request, _('Account not exists in the system'))
+            return redirect('auth_login')
+        # return super().get(request, *args, **kwargs)
+        # Log in with the user
+        login(request, login_user, backend='django.contrib.auth.backends.ModelBackend')
+        return redirect('home')
+    
+    def validate_hash(self, data, key) -> bool:
+        [hash_params, hash_value] = data.split('&hash=')
+        print("HASH_PARAMS: ", hash_params)
+        print("HASH_VALUE: ", hash_value)
+        hashed_data = self.HEX(self.HMAC_SHA256(key, hash_params))
+        print("HASHED_DATA: ", hashed_data)
+        return hashed_data == hash_value
+        
+    def HMAC_SHA256(self, key, data) -> bytes:
+        if isinstance(key, str):
+            key = key.encode()
+        if isinstance(data, str):
+            data = data.encode()
+        return hmac.new(key, data, hashlib.sha256).digest()
+
+    def HEX(self, data: bytes) -> str:
+        return data.hex()
+        
 class CustomPasswordChangeView(PasswordChangeView):
     template_name = 'registration/password_change_form.html'
 

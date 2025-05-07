@@ -225,9 +225,9 @@ class CustomLoginHashView(LoginView):
         auth_data = base64.b64decode(base64_data).decode('utf-8')
         mezon_app_token = getattr(settings, 'MEZON_APP_TOKEN')
         secret_key = self.HMAC_SHA256(mezon_app_token, "WebAppData")
-        # is_valid = self.validate_hash(auth_data, secret_key)
-        # if not is_valid:
-        #     return redirect_to_login()
+        is_valid = self.validate_hash(auth_data, secret_key)
+        if not is_valid:
+            return redirect_to_login()
         data_parsed = dict(parse_qsl(auth_data))
         user_data = json.loads(data_parsed.get('user'))
         # Process user data and log in the user
@@ -236,17 +236,13 @@ class CustomLoginHashView(LoginView):
         if not login_user:
             messages.error(request, _('Account not exists in the system'))
             return redirect('auth_login')
-        # return super().get(request, *args, **kwargs)
         # Log in with the user
         login(request, login_user, backend='django.contrib.auth.backends.ModelBackend')
         return redirect('home')
     
     def validate_hash(self, data, key) -> bool:
         [hash_params, hash_value] = data.split('&hash=')
-        print("HASH_PARAMS: ", hash_params)
-        print("HASH_VALUE: ", hash_value)
         hashed_data = self.HEX(self.HMAC_SHA256(key, hash_params))
-        print("HASHED_DATA: ", hashed_data)
         return hashed_data == hash_value
         
     def HMAC_SHA256(self, key, data) -> bytes:

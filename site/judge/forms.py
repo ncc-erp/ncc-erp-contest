@@ -1,5 +1,6 @@
 import json
 from operator import attrgetter, itemgetter
+import time
 
 import pyotp
 import webauthn
@@ -167,7 +168,15 @@ class EditOrganizationForm(ModelForm):
 class CustomAuthenticationForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super(CustomAuthenticationForm, self).__init__(*args, **kwargs)
-      
+        mezon_auth_url = getattr(settings, 'MEZON_AUTH_URL')
+        
+        mezon_client_id = getattr(settings, 'MEZON_AUTH_CLIENT_ID')
+        redirect_url = getattr(settings, 'MEZON_AUTH_REDIRECT_URL')
+        scope = "openid offline";
+        response_type = "code";
+        state = round(time.time() * 1000)
+        
+        self.mezon_auth_url = f'{mezon_auth_url}/oauth2/auth?response_type={response_type}&client_id={mezon_client_id}&redirect_uri={redirect_url}&scope={scope}&state={state}'
         self.has_google_auth = self._has_social_auth('GOOGLE_OAUTH2')
         self.has_facebook_auth = self._has_social_auth('FACEBOOK')
         self.has_github_auth = self._has_social_auth('GITHUB_SECURE')

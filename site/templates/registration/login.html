@@ -30,8 +30,18 @@
         <form action="" method="post"  class="login-form">
                 <h2>{{_('Welcome to NCC contest!')}}</h2>
              {% csrf_token %}
+            {% if messages %}
+                <div id="form-errors">
+                    {% for message in messages %}
+                        <p class="error">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
             {% if form.errors %}
                 <div id="form-errors">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
                     <p class="error">{{ _('Invalid username or password.') }}</p>
                 </div>
             {% endif %}
@@ -47,14 +57,14 @@
             <button type="submit" class="login-btn">{{ _('Login!') }}</button>
             <div class="separator">
                 <hr>
-                <span>Or</span>
+                <span>OR</span>
                 <hr>
             </div>
-            <a href="{{ url('social:begin', "google-oauth2") }}?next={{ next }}" >
-                  <div class="google-login-btn">
-                <img src="{{ static('icons/pngegg.png') }}"
-                    alt="Google logo" onerror="this.src=&quot;{{ static('icons/pngegg.png') }}&quot;; this.onerror=null" style="width:60px;height:40px;border: none"> 
-                <span>{{_('Login with Google')}}</span>
+            <a href="{{ form.mezon_auth_url }}" >
+                  <div class="mezon-login-btn">
+                <img src="{{ static('icons/logo_mezon.webp') }}"
+                    alt="Mezon logo" onerror="this.src=&quot;{{ static('icons/logo_mezon.webp') }}&quot;; this.onerror=null" style="height:40px;border: none"> 
+                <span>{{_('Login with Mezon')}}</span>
             </div>
             </a>
           

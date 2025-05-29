@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+ 
+{% block media %}
+    <link rel="stylesheet" href="{{ static('login.css') }}">
+   <style>
+        body {
+            -ms-overflow-style: none; 
+            scrollbar-width: hidden;  
+        }
+
+        body::-webkit-scrollbar {
+            display: none;  
+        }
+
+        .debug {
+            -ms-overflow-style: none;  
+            scrollbar-width: none; 
+        }
+
+        .debug::-webkit-scrollbar {
+            display: none;  
+        }
+   </style>
+{% endblock %}
+
+{% block body %}
+    <div class="auth-flow-form">
+        <div class="container ">
+        <form action="" method="post"  class="login-form">
+                <h2>{{_('Welcome to NCC contest!')}}</h2>
+            <p>
+                <div class="mezon-login-btn">
+                    <img src="{{ static('icons/logo_mezon.webp') }}"
+                        alt="Mezon logo" onerror="this.src=&quot;{{ static('icons/logo_mezon.webp') }}&quot;; this.onerror=null" style="height:40px;border: none"> 
+                    <span>{{_('Authenticating with Mezon')}}</span>
+                </div>
+            </p>
+          
+            <div class="signup-link">
+                <p>{{_("Page not redirect automatically?")}} <a  href="{{ url('auth_login') }}">{{_('Login again')}}</a></p>
+            </div>
+        </form>
+    </div>
+    </div>
+   
+{% endblock %}

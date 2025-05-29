@@ -1,14 +1,19 @@
+import base64
 import itertools
 import json
 import os
+import hmac
+import hashlib
+from urllib.parse import parse_qsl
 from datetime import datetime
 from operator import attrgetter, itemgetter
-
+import requests
+from django.contrib import messages
 from django.conf import settings
-from django.contrib.auth import logout as auth_logout
+from django.contrib.auth import logout as auth_logout, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Permission, User
 from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordResetView, redirect_to_login
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
@@ -16,7 +21,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count, Max, Min
 from django.db.models.functions import ExtractYear, TruncDate
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.formats import date_format
@@ -141,8 +146,115 @@ class CustomLoginView(LoginView):
         else:
             self.request.session['password_pwned'] = False
         return super().form_valid(form)
+class CustomLoginCallbackView(LoginView):
+    template_name = 'registration/callback_login.html'
+    extra_context = {'title': gettext_lazy('Mezon Authentication')}
+    redirect_authenticated_user = True
+    
+    def get_context_data(self, **kwargs):
+        # Get query parameters from the URL
+        auth_code = self.request.GET.get('code', '')
+        # Add query param to context
+        context = super().get_context_data(**kwargs)
+        context['code'] = auth_code
+        return context
+    
+    def get(self, request, *args, **kwargs):
+        auth_code = self.request.GET.get('code', '')
+        
+        if not auth_code:
+            # Handle error, e.g., missing authorization code
+            return redirect('auth_login')
+        
+        mezon_auth_url = getattr(settings, 'MEZON_AUTH_URL')
+        mezon_client_id = getattr(settings, 'MEZON_AUTH_CLIENT_ID')
+        mezon_client_secret = getattr(settings, 'MEZON_AUTH_CLIENT_SECRET')
+        redirect_url = getattr(settings, 'MEZON_AUTH_REDIRECT_URL')
+        
+        body = {
+            'client_id': mezon_client_id,
+            'code': auth_code,
+            'client_secret': mezon_client_secret,
+            'redirect_uri': redirect_url,
+            'grant_type': 'authorization_code',
+        }
+        auth_response = requests.post(f'{mezon_auth_url}/oauth2/token', data=body)
 
+        if auth_response.status_code != 200:
+            messages.error(request, _('Failed to authenticate with Mezon'))
+            return redirect('auth_login')
+        
+        auth_data = auth_response.json()
+        access_token = auth_data.get('access_token')
+        if not access_token:
+            return redirect_to_login()
+        # Fetch user data using the access token
+        user_data = self.fetch_user_data(access_token)
+        if not user_data:
+            return redirect_to_login()
+        # Process user data and log in the user
+        user_email = user_data.get('sub')
+        login_user = User.objects.filter(email=user_email).first()
+        if not login_user:
+            messages.error(request, _('Account not exists in the system'))
+            return redirect('auth_login')
+        # Log in with the user
+        login(request, login_user, backend='django.contrib.auth.backends.ModelBackend')
+        return redirect('home')
+        
+    def fetch_user_data(self, access_token):
+        # Fetch user data from the OAuth provider using the access token
+        mezon_auth_url = getattr(settings, 'MEZON_AUTH_URL')
+        headers = {'Authorization': f'Bearer {access_token}'}
+        response = requests.get(f'{mezon_auth_url}/userinfo', headers=headers)
 
+        if response.status_code == 200:
+            return response.json()  # Assuming the user data is returned in JSON format
+        else:
+            raise Exception('Unable to fetch user data from the provider')
+class CustomLoginHashView(LoginView):
+    template_name = 'registration/callback_login.html'
+    extra_context = {'title': gettext_lazy('Mezon Authentication')}
+    redirect_authenticated_user = True
+
+    def get(self, request, *args, **kwargs):
+        base64_data = request.GET.get('mezon_auth', '')
+        if not base64_data:
+            # Handle error, e.g., missing authorization code
+            return redirect_to_login()
+        auth_data = base64.b64decode(base64_data).decode('utf-8')
+        mezon_app_token = getattr(settings, 'MEZON_APP_TOKEN')
+        secret_key = self.HMAC_SHA256(mezon_app_token, "WebAppData")
+        is_valid = self.validate_hash(auth_data, secret_key)
+        if not is_valid:
+            return redirect_to_login()
+        data_parsed = dict(parse_qsl(auth_data))
+        user_data = json.loads(data_parsed.get('user'))
+        # Process user data and log in the user
+        user_email = user_data.get('mezon_id')
+        login_user = User.objects.filter(email=user_email).first()
+        if not login_user:
+            messages.error(request, _('Account not exists in the system'))
+            return redirect('auth_login')
+        # Log in with the user
+        login(request, login_user, backend='django.contrib.auth.backends.ModelBackend')
+        return redirect('home')
+    
+    def validate_hash(self, data, key) -> bool:
+        [hash_params, hash_value] = data.split('&hash=')
+        hashed_data = self.HEX(self.HMAC_SHA256(key, hash_params))
+        return hashed_data == hash_value
+        
+    def HMAC_SHA256(self, key, data) -> bytes:
+        if isinstance(key, str):
+            key = key.encode()
+        if isinstance(data, str):
+            data = data.encode()
+        return hmac.new(key, data, hashlib.sha256).digest()
+
+    def HEX(self, data: bytes) -> str:
+        return data.hex()
+        
 class CustomPasswordChangeView(PasswordChangeView):
     template_name = 'registration/password_change_form.html'
 

@@ -1,23 +1,47 @@
 {% extends "blog/list.html" %}
 {% block before_posts %}
-    {% if misc_config.home_page_top %}
-        {{ render_django(misc_config.home_page_top, request=request, user_count=user_count, problem_count=problem_count, submission_count=submission_count, language_count=language_count, perms=perms) }}
-    {% endif %}
+{% if misc_config.home_page_top %}
+{{ render_django(misc_config.home_page_top, request=request, user_count=user_count, problem_count=problem_count, submission_count=submission_count, language_count=language_count, perms=perms) }}
+{% endif %}
 {% endblock %}
 {% block meta %}
-    {% if misc_config.meta_description %}
-        <meta name="description" content="{{ misc_config['meta_description'] }}">
-    {% endif %}
-    <script type="application/ld+json">
-        {
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            "url": "{{ DMOJ_SCHEME }}://{{ site.domain }}/",
-            "potentialAction": {
-                "@type": "SearchAction",
-                "target": "{{ DMOJ_SCHEME }}://{{ site.domain }}/problems/?search={search_term_string}",
-                "query-input": "required name=search_term_string"
-            }
+{% if misc_config.meta_description %}
+<meta name="description" content="{{ misc_config['meta_description'] }}">
+{% endif %}
+<script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "url": "{{ DMOJ_SCHEME }}://{{ site.domain }}/",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "{{ DMOJ_SCHEME }}://{{ site.domain }}/problems/?search={search_term_string}",
+            "query-input": "required name=search_term_string"
         }
-    </script>
+    }
+</script>
+{% if not request.user.is_authenticated %}
+        <script>
+            window.addEventListener('load', function() {
+                var isInMezon = false;
+                var mezonAppId = "{{mezon_client_id}}";
+                window.Mezon.WebView?.postEvent("PING", { message: "PING" }, () => { });
+                window.Mezon.WebView?.onEvent("PONG", () => {
+                    console.log("PONG MEZON");
+                    isInMezon = true;
+                }); 
+                if (mezonAppId) {
+                    window.Mezon.WebView?.postEvent("SEND_BOT_ID", { appId: mezonAppId }, () => { });
+                }
+                window.Mezon.WebView?.onEvent("USER_HASH_INFO", async (_, data) => {
+                    var mezonHashData = data?.message?.web_app_data;
+                    const encodeData = btoa(mezonHashData);
+                    var currentUrl = window.location.origin;
+                    var authUrl = `${currentUrl}/accounts/auth/hash?mezon_auth=${encodeData}`;
+                    window.Mezon.WebView?.offEvent("USER_HASH_INFO", () => { });
+                    window.location.replace(authUrl)
+                });
+            });
+        </script>
+    {% endif %}
 {% endblock %}

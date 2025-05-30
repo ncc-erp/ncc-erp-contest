@@ -198,7 +198,7 @@ class CustomLoginCallbackView(LoginView):
             
         # Process user data and log in the user
         user_email = user_data.get('sub')
-        username = user_data.get('username')  # Get username from OAuth response
+        username = user_data.get('username') or user_data.get('mezon_id')
         
         login_user = User.objects.filter(email=user_email).first()
         if not login_user:
@@ -207,6 +207,7 @@ class CustomLoginCallbackView(LoginView):
                 username=username,
                 email=user_email,
             )
+            
             # Create profile for the new user
             profile = Profile(user=login_user)
             profile.language = Language.get_default_language()

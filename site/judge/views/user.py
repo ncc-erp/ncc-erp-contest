@@ -204,7 +204,7 @@ class CustomLoginCallbackView(LoginView):
         if not login_user:
             # Create new user with data from OAuth
             login_user = User.objects.create_user(
-                username=username,
+                username=username or user_email.split('@')[0],
                 email=user_email,
             )
             
@@ -256,8 +256,21 @@ class CustomLoginHashView(LoginView):
         user_email = user_data.get('mezon_id')
         login_user = User.objects.filter(email=user_email).first()
         if not login_user:
-            messages.error(request, _('Account not exists in the system'))
-            return redirect('auth_login')
+            # Create new user with data from OAuth
+            login_user = User.objects.create_user(
+                username=user_email.split('@')[0],
+                email=user_email,
+            )
+            
+            # Create profile for the new user
+            profile = Profile(user=login_user)
+            profile.language = Language.get_default_language()
+            profile.save()
+            
+            # Log in the user
+            login(request, login_user, backend='django.contrib.auth.backends.ModelBackend')  
+            # Redirect to profile creation page to complete profile setup
+            return redirect('profile_creation')
         # Log in with the user
         login(request, login_user, backend='django.contrib.auth.backends.ModelBackend')
         return redirect('home')

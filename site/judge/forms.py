@@ -49,12 +49,12 @@ class ProfileForm(ModelForm):
 
     class Meta:
         model = Profile
-        fields = ['about', 'organizations', 'timezone', 'language', 'ace_theme', 'site_theme', 'user_script']
+        fields = ['about', 'organizations', 'timezone', 'language', 'ace_theme', 'user_script']
         widgets = {
+            'user_script': AceWidget(theme='github'),
             'timezone': Select2Widget(attrs={'style': 'width:200px'}),
             'language': Select2Widget(attrs={'style': 'width:200px'}),
             'ace_theme': Select2Widget(attrs={'style': 'width:200px'}),
-            'site_theme': Select2Widget(attrs={'style': 'width:200px'}),
         }
 
         has_math_config = bool(settings.MATHOID_URL)
@@ -67,23 +67,7 @@ class ProfileForm(ModelForm):
                 preview=reverse_lazy('profile_preview'),
                 attrs={'style': 'max-width:700px;min-width:700px;width:700px'},
             )
-
-    def clean_about(self):
-        if 'about' in self.changed_data and not self.instance.has_any_solves:
-            raise ValidationError(_('You must solve at least one problem before you can update your profile.'))
-        return self.cleaned_data['about']
-
-    def clean(self):
-        organizations = self.cleaned_data.get('organizations') or []
-        max_orgs = settings.DMOJ_USER_MAX_ORGANIZATION_COUNT
-
-        if sum(org.is_open for org in organizations) > max_orgs:
-            raise ValidationError(ngettext_lazy('You may not be part of more than {count} public organization.',
-                                                'You may not be part of more than {count} public organizations.',
-                                                max_orgs).format(count=max_orgs))
-
-        return self.cleaned_data
-
+            
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super(ProfileForm, self).__init__(*args, **kwargs)
@@ -91,9 +75,14 @@ class ProfileForm(ModelForm):
             self.fields['organizations'].queryset = Organization.objects.filter(
                 Q(is_open=True) | Q(id__in=user.profile.organizations.all()),
             )
-        if not self.fields['organizations'].queryset:
-            self.fields.pop('organizations')
-        self.fields['user_script'].widget = AceWidget(mode='javascript', theme=user.profile.resolved_ace_theme)
+
+
+class ProfileCreationForm(ProfileForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Remove any validation requirements for new users
+        self.fields['about'].required = False
+        self.fields['organizations'].required = False
 
 
 class DownloadDataForm(Form):

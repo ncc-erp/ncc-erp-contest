@@ -33,7 +33,7 @@ from django.views.generic import DetailView, FormView, ListView, TemplateView, V
 from reversion import revisions
 
 from judge.forms import CustomAuthenticationForm, DownloadDataForm, ProfileForm, newsletter_id
-from judge.models import Profile, Submission
+from judge.models import Profile, Submission, Language
 from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
 from judge.tasks import prepare_user_data
@@ -45,6 +45,7 @@ from judge.utils.ranker import ranker
 from judge.utils.subscription import Subscription
 from judge.utils.unicode import utf8text
 from judge.utils.views import DiggPaginatorMixin, QueryStringSortMixin, TitleMixin, add_file_response, generic_message
+from judge.views import TitledTemplateView
 from .contests import ContestRanking
 
 __all__ = ['UserPage', 'UserAboutPage', 'UserProblemsPage', 'UserDownloadData', 'UserPrepareData',
@@ -146,6 +147,8 @@ class CustomLoginView(LoginView):
         else:
             self.request.session['password_pwned'] = False
         return super().form_valid(form)
+
+
 class CustomLoginCallbackView(LoginView):
     template_name = 'registration/callback_login.html'
     extra_context = {'title': gettext_lazy('Mezon Authentication')}
@@ -192,13 +195,29 @@ class CustomLoginCallbackView(LoginView):
         user_data = self.fetch_user_data(access_token)
         if not user_data:
             return redirect_to_login()
+            
         # Process user data and log in the user
         user_email = user_data.get('sub')
+        username = user_data.get('username')  # Get username from OAuth response
+        
         login_user = User.objects.filter(email=user_email).first()
         if not login_user:
-            messages.error(request, _('Account not exists in the system'))
-            return redirect('auth_login')
-        # Log in with the user
+            # Create new user with data from OAuth
+            login_user = User.objects.create_user(
+                username=username,
+                email=user_email,
+            )
+            # Create profile for the new user
+            profile = Profile(user=login_user)
+            profile.language = Language.get_default_language()
+            profile.save()
+            
+            # Log in the user
+            login(request, login_user, backend='django.contrib.auth.backends.ModelBackend')  
+            # Redirect to profile creation page to complete profile setup
+            return redirect('profile_creation')
+            
+        # Log in with existing user
         login(request, login_user, backend='django.contrib.auth.backends.ModelBackend')
         return redirect('home')
         
@@ -212,6 +231,8 @@ class CustomLoginCallbackView(LoginView):
             return response.json()  # Assuming the user data is returned in JSON format
         else:
             raise Exception('Unable to fetch user data from the provider')
+
+
 class CustomLoginHashView(LoginView):
     template_name = 'registration/callback_login.html'
     extra_context = {'title': gettext_lazy('Mezon Authentication')}
@@ -255,6 +276,7 @@ class CustomLoginHashView(LoginView):
     def HEX(self, data: bytes) -> str:
         return data.hex()
         
+
 class CustomPasswordChangeView(PasswordChangeView):
     template_name = 'registration/password_change_form.html'
 
@@ -619,3 +641,51 @@ class CustomPasswordResetView(PasswordResetView):
             return HttpResponse(_('You have sent too many password reset requests. Please try again later.'),
                                 content_type='text/plain', status=429)
         return super().post(request, *args, **kwargs)
+
+
+class ProfileCreationForm(ProfileForm):
+    def clean_about(self):
+        # Skip the solve check for new users
+        return self.cleaned_data.get('about', '')
+
+
+class ProfileCreationView(TitledTemplateView):
+    template_name = 'registration/profile_creation.html'
+    title = _('Create your profile')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if 'form' not in context:
+            # Get or initialize profile
+            profile = Profile.objects.filter(user=self.request.user).first()
+            if profile:
+                form = ProfileForm(instance=profile, user=self.request.user)
+            else:
+                form = ProfileCreationForm(user=self.request.user)
+            context['form'] = form
+        return context
+
+    def post(self, request, *args, **kwargs):
+        # Get existing profile or None
+        profile = Profile.objects.filter(user=request.user).first()
+        
+        if profile:
+            form = ProfileForm(request.POST, instance=profile, user=request.user)
+        else:
+            form = ProfileCreationForm(request.POST, user=request.user)
+            
+        if form.is_valid():
+            with revisions.create_revision(atomic=True):
+                profile = form.save(commit=False)
+                if not hasattr(profile, 'user'):  # Only set user if this is a new profile
+                    profile.user = request.user
+                if not hasattr(profile, 'language'):  # Only set language if not already set
+                    profile.language = Language.get_default_language()
+                profile.save()
+                form.save_m2m()  # Save many-to-many relationships
+                revisions.set_user(request.user)
+                revisions.set_comment('Updated on profile creation' if profile else 'Created on registration')
+            return redirect('home')
+        else:
+            print("Form errors:", form.errors)  # Debug form errors
+        return self.render_to_response(self.get_context_data(form=form))

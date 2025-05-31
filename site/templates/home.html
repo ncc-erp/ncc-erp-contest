@@ -24,7 +24,7 @@
         <script>
             window.addEventListener('load', function() {
                 var isInMezon = false;
-                var mezonAppId = "{{mezon_client_id}}";
+                var mezonAppId = "{{mezon_app_id}}";
                 window.Mezon.WebView?.postEvent("PING", { message: "PING" }, () => { });
                 window.Mezon.WebView?.onEvent("PONG", () => {
                     console.log("PONG MEZON");

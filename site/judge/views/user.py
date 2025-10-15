@@ -197,7 +197,7 @@ class CustomLoginCallbackView(LoginView):
             return redirect_to_login()
             
         # Process user data and log in the user
-        user_email = user_data.get('sub')
+        user_email = user_data.get('email') or user_data.get('mezon_id')
         username = user_data.get('username') or user_data.get('mezon_id')
         
         login_user = User.objects.filter(email=user_email).first()
@@ -246,7 +246,8 @@ class CustomLoginHashView(LoginView):
             return redirect_to_login()
         auth_data = base64.b64decode(base64_data).decode('utf-8')
         mezon_app_token = getattr(settings, 'MEZON_APP_TOKEN')
-        secret_key = self.HMAC_SHA256(mezon_app_token, "WebAppData")
+        hashed_token = hashlib.md5(mezon_app_token.encode()).hexdigest()
+        secret_key = self.HMAC_SHA256(hashed_token, "WebAppData")
         is_valid = self.validate_hash(auth_data, secret_key)
         if not is_valid:
             return redirect_to_login()

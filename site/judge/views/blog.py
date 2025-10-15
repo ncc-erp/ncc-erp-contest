@@ -41,7 +41,7 @@ class PostList(ListView):
         context['new_problems'] = Problem.get_public_problems() \
                                          .order_by('-date', 'code')[:settings.DMOJ_BLOG_NEW_PROBLEM_COUNT]
         context['page_titles'] = CacheDict(lambda page: Comment.get_page_title(page))
-        context['mezon_client_id'] = getattr(settings, 'MEZON_AUTH_CLIENT_ID')
+        context['mezon_app_id'] = getattr(settings, 'MEZON_APP_ID')
         context['has_clarifications'] = False
         if self.request.user.is_authenticated:
             participation = self.request.profile.current_contest
